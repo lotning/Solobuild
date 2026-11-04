@@ -420,6 +420,62 @@ summary:focus-visible {
   gap: 6px;
 }
 
+.week-nav {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.week-range {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.week-arrow {
+  height: 44px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.week-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.set input:disabled {
+  background: transparent;
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+  opacity: 1;
+}
+
+.finish {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clear-day-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.danger {
+  min-height: 46px;
+  padding: 0 14px;
+  background: #b3382c;
+  color: #ffffff;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
 .data-panel {
   margin-top: 32px;
 }

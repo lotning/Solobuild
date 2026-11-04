@@ -8,6 +8,9 @@ const today = new Date();
 const todayKey = toKey(today);
 const todayIndex = weekdayIndex(todayKey);
 let selectedIndex = todayIndex;
+let weekOffset = 0;
+let editingKey = null;
+let editSnapshot = null;
 let storageFailed = false;
 const store = loadStore();
 
@@ -40,7 +43,7 @@ function el(tag, className, ...children) {
 
 function dateForIndex(index) {
   const date = new Date(today);
-  date.setDate(today.getDate() + index - todayIndex);
+  date.setDate(today.getDate() + index - todayIndex + weekOffset * 7);
   return date;
 }
 
@@ -88,11 +91,13 @@ function setResult(key, id, index, raw) {
   log.results[id][index] = Number.isNaN(parsed) ? null : Math.min(9999, Math.max(0, parsed));
   saveStore();
   if (log.finished) refreshSummary(key);
+  refreshClearDay(key);
 }
 
 function setInputs(exercise, sets, key, context) {
   const log = store.logs[key];
   const saved = (log && log.results[exercise.id]) || [];
+  const locked = Boolean(log && log.finished) && editingKey !== key;
   const row = el("div", "sets");
   const inputs = [];
   for (let index = 0; index < sets; index += 1) {
@@ -100,28 +105,54 @@ function setInputs(exercise, sets, key, context) {
     input.type = "number";
     input.inputMode = "numeric";
     input.min = "0";
-    input.placeholder = exercise.target === undefined ? "" : String(exercise.target);
+    input.placeholder = locked ? "—" : exercise.target === undefined ? "" : String(exercise.target);
+    input.disabled = locked;
     const value = saved[index];
     input.value = value === null || value === undefined ? "" : String(value);
     const prefix = context.circuit ? "Коло" : "Підхід";
     input.setAttribute("aria-label", `${exercise.name}, ${prefix.toLowerCase()} ${index + 1}${exercise.unit ? ", секунд" : ""}`);
-    input.addEventListener("input", () => setResult(key, exercise.id, index, input.value));
+    input.addEventListener("input", () => {
+      setResult(key, exercise.id, index, input.value);
+      updateButtons();
+    });
     inputs.push(input);
     row.append(el("label", "set", el("span", "set-label", sets === 1 ? "Результат" : `${index + 1}`), input));
   }
-  if (exercise.target === undefined) return row;
+  if (locked) return row;
 
-  const fill = el("button", "fill", "За планом");
-  fill.type = "button";
-  fill.addEventListener("click", () => {
+  const fill = exercise.target === undefined ? null : el("button", "fill", "За планом");
+  if (fill) {
+    fill.type = "button";
+    fill.addEventListener("click", () => {
+      inputs.forEach((input, index) => {
+        if (input.value === "") {
+          input.value = String(exercise.target);
+          setResult(key, exercise.id, index, input.value);
+        }
+      });
+      updateButtons();
+    });
+  }
+
+  const clear = el("button", "plain", "Очистити");
+  clear.type = "button";
+  clear.setAttribute("aria-label", `Очистити поля: ${exercise.name}`);
+  clear.addEventListener("click", () => {
     inputs.forEach((input, index) => {
-      if (input.value === "") {
-        input.value = String(exercise.target);
-        setResult(key, exercise.id, index, input.value);
+      if (input.value !== "") {
+        input.value = "";
+        setResult(key, exercise.id, index, "");
       }
     });
+    updateButtons();
   });
-  return el("div", "sets-wrap", row, fill);
+
+  function updateButtons() {
+    if (fill) fill.hidden = inputs.every((input) => input.value !== "");
+    clear.hidden = inputs.every((input) => input.value === "");
+  }
+  updateButtons();
+  return el("div", "sets-wrap", row, fill, clear);
 }
 
 function renderExercise(exercise, sets, key, context) {
@@ -217,6 +248,80 @@ function refreshSummary(key) {
   if (current) current.replaceWith(buildSummary(key));
 }
 
+function clearLog(key) {
+  // Порожній запис замість видалення: так очищення переноситься й на інший пристрій під час імпорту.
+  store.logs[key] = { finished: false, results: {} };
+  editingKey = null;
+  editSnapshot = null;
+  saveStore();
+  render();
+}
+
+function refreshClearDay(key) {
+  const button = document.getElementById("clear-day");
+  if (button) button.hidden = !hasAnyResult(key) && !(store.logs[key] && store.logs[key].finished);
+}
+
+function renderClearDay(key) {
+  const wrap = el("div", "clear-day-wrap");
+  const button = el("button", "plain", "Очистити день");
+  button.type = "button";
+  button.id = "clear-day";
+  button.addEventListener("click", () => {
+    const confirm = el("button", "danger", "Так, очистити");
+    confirm.type = "button";
+    confirm.addEventListener("click", () => clearLog(key));
+    const cancel = el("button", "plain", "Скасувати");
+    cancel.type = "button";
+    cancel.addEventListener("click", () => wrap.replaceWith(renderClearDay(key)));
+    wrap.replaceChildren(
+      el("p", "notice", "Видалити всі результати цього дня? Цілі наступних тренувань буде перераховано."),
+      el("div", "data-actions", confirm, cancel),
+    );
+  });
+  wrap.append(button);
+  button.hidden = !hasAnyResult(key) && !(store.logs[key] && store.logs[key].finished);
+  return wrap;
+}
+
+function renderSavedActions(key) {
+  const edit = el("button", "fill", "Редагувати");
+  edit.type = "button";
+  edit.addEventListener("click", () => {
+    editSnapshot = JSON.parse(JSON.stringify(store.logs[key]));
+    editingKey = key;
+    render();
+    document.querySelector(".block").scrollIntoView({ block: "start" });
+  });
+  return el("div", "data-actions", edit, renderClearDay(key));
+}
+
+function renderEditActions(key) {
+  const save = el("button", "finish-button", "Зберегти зміни");
+  save.type = "button";
+  save.addEventListener("click", () => {
+    if (!hasAnyResult(key)) {
+      clearLog(key);
+      return;
+    }
+    editingKey = null;
+    editSnapshot = null;
+    saveStore();
+    render();
+    document.getElementById("summary-card").scrollIntoView({ block: "nearest" });
+  });
+  const cancel = el("button", "plain", "Скасувати зміни");
+  cancel.type = "button";
+  cancel.addEventListener("click", () => {
+    store.logs[key] = editSnapshot;
+    editingKey = null;
+    editSnapshot = null;
+    saveStore();
+    render();
+  });
+  return el("div", "finish", save, el("div", "data-actions", cancel, renderClearDay(key)));
+}
+
 function renderFinish(key) {
   const wrap = el("div", "finish");
   const hint = el("p", "finish-hint");
@@ -233,7 +338,7 @@ function renderFinish(key) {
     render();
     document.getElementById("summary-card").scrollIntoView({ block: "nearest" });
   });
-  wrap.append(button, hint);
+  wrap.append(button, hint, renderClearDay(key));
   return wrap;
 }
 
@@ -263,8 +368,13 @@ function renderTraining(key, plan) {
   const log = store.logs[key];
   if (!canLog) {
     main.append(el("p", "block-note", "Запис результатів відкриється в день тренування."));
+  } else if (log && log.finished && editingKey === key) {
+    main.append(el("p", "notice", "Зміни зберігаються одразу й впливають на цілі наступних тренувань."));
+    main.append(buildSummary(key));
+    main.append(renderEditActions(key));
   } else if (log && log.finished) {
     main.append(buildSummary(key));
+    main.append(renderSavedActions(key));
   } else {
     if (!plan.isTest) main.append(el("p", "block-note", "Для вправ на кожну руку чи ногу вводьте результат слабшої сторони. Порожнє поле в розпочатій вправі вважається невиконаним підходом."));
     main.append(renderFinish(key));
@@ -297,7 +407,7 @@ function renderWeek() {
     const mark = finished ? " is-done" : plan.day ? " is-training" : "";
     const button = el(
       "button",
-      `day${index === selectedIndex ? " is-selected" : ""}${index === todayIndex ? " is-today" : ""}`,
+      `day${index === selectedIndex ? " is-selected" : ""}${key === todayKey ? " is-today" : ""}`,
       el("span", "day-name", label),
       el("span", "day-date", String(dateForIndex(index).getDate())),
       el("span", `day-mark${mark}`),
@@ -314,11 +424,44 @@ function renderWeek() {
   });
 }
 
+function weekRangeLabel() {
+  const first = dateForIndex(0);
+  const last = dateForIndex(6);
+  const lastText = last.toLocaleDateString("uk-UA", { day: "numeric", month: "long" });
+  if (first.getMonth() === last.getMonth()) return `${first.getDate()}–${lastText}`;
+  return `${first.toLocaleDateString("uk-UA", { day: "numeric", month: "long" })} – ${lastText}`;
+}
+
+function renderWeekNav() {
+  const previous = el("button", "week-arrow", "‹");
+  previous.type = "button";
+  previous.setAttribute("aria-label", "Попередній тиждень");
+  previous.disabled = !store.startDate || toKey(dateForIndex(0)) <= mondayKey(store.startDate);
+  previous.addEventListener("click", () => {
+    weekOffset -= 1;
+    render();
+  });
+  const next = el("button", "week-arrow", "›");
+  next.type = "button";
+  next.setAttribute("aria-label", "Наступний тиждень");
+  next.disabled = weekOffset >= 0;
+  next.addEventListener("click", () => {
+    weekOffset += 1;
+    render();
+  });
+  document.getElementById("week-nav").replaceChildren(previous, el("p", "week-range", weekRangeLabel()), next);
+}
+
 function render() {
+  renderWeekNav();
   renderWeek();
   const key = toKey(dateForIndex(selectedIndex));
+  if (editingKey && editingKey !== key) {
+    editingKey = null;
+    editSnapshot = null;
+  }
   const plan = planFor(key, store.startDate);
-  const isToday = selectedIndex === todayIndex;
+  const isToday = key === todayKey;
 
   const weekLabel = `Тиждень ${plan.week} із ${CYCLE_WEEKS}`;
   document.getElementById("eyebrow").textContent = `${isToday ? `Сьогодні · ${dateLabel(selectedIndex)}` : dateLabel(selectedIndex)} · ${weekLabel}`;
@@ -329,10 +472,12 @@ function render() {
 
   const content = document.getElementById("content");
   content.replaceChildren(plan.day ? renderTraining(key, plan) : renderRecovery(selectedIndex));
+  if (typeof renderDataPanel === "function") renderDataPanel();
 }
 
 document.getElementById("back-today").addEventListener("click", () => {
   selectedIndex = todayIndex;
+  weekOffset = 0;
   render();
 });
 
