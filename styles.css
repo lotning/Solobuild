@@ -480,6 +480,50 @@ summary:focus-visible {
   margin-top: 32px;
 }
 
+.data-panel-next {
+  margin-top: 12px;
+}
+
+.sync-steps {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.sync-steps li + li {
+  margin-top: 6px;
+}
+
+.text-link {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.token-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.token-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.token-input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.fill:disabled {
+  opacity: 0.5;
+}
+
 .data-body {
   display: flex;
   flex-direction: column;

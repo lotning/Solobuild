@@ -15,6 +15,7 @@ function readLastExport() {
 
 function isValidLog(log) {
   if (!log || typeof log !== "object" || typeof log.finished !== "boolean") return false;
+  if (log.updatedAt !== undefined && typeof log.updatedAt !== "string") return false;
   if (!log.results || typeof log.results !== "object" || Array.isArray(log.results)) return false;
   return Object.entries(log.results).every(
     ([id, values]) =>
@@ -31,18 +32,26 @@ function isValidBackup(data) {
   return Object.entries(data.logs).every(([key, log]) => DATE_PATTERN.test(key) && isValidLog(log));
 }
 
+function logContent(log) {
+  return JSON.stringify({ finished: log.finished, results: log.results });
+}
+
 function compareBackup(data) {
   let added = 0;
   let changed = 0;
   Object.entries(data.logs).forEach(([key, log]) => {
     if (!store.logs[key]) added += 1;
-    else if (JSON.stringify(store.logs[key]) !== JSON.stringify(log)) changed += 1;
+    else if (logContent(store.logs[key]) !== logContent(log)) changed += 1;
   });
   return { added, changed };
 }
 
 function applyBackup(data) {
-  Object.assign(store.logs, data.logs);
+  // Імпорт — свідоме рішення, тому змінені дні вважаються найновішими й під час синхронізації.
+  const now = new Date().toISOString();
+  Object.entries(data.logs).forEach(([key, log]) => {
+    if (!store.logs[key] || logContent(store.logs[key]) !== logContent(log)) store.logs[key] = { ...log, updatedAt: now };
+  });
   if (data.startDate && (!store.startDate || data.startDate < store.startDate)) store.startDate = data.startDate;
   saveStore();
   render();

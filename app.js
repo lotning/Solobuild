@@ -32,6 +32,7 @@ function saveStore() {
     storageFailed = true;
   }
   document.getElementById("storage-warning").hidden = !storageFailed;
+  if (typeof scheduleSync === "function") scheduleSync();
 }
 
 function el(tag, className, ...children) {
@@ -89,6 +90,7 @@ function setResult(key, id, index, raw) {
   if (!log.results[id]) log.results[id] = [];
   const parsed = parseInt(raw, 10);
   log.results[id][index] = Number.isNaN(parsed) ? null : Math.min(9999, Math.max(0, parsed));
+  log.updatedAt = new Date().toISOString();
   saveStore();
   if (log.finished) refreshSummary(key);
   refreshClearDay(key);
@@ -250,7 +252,7 @@ function refreshSummary(key) {
 
 function clearLog(key) {
   // Порожній запис замість видалення: так очищення переноситься й на інший пристрій під час імпорту.
-  store.logs[key] = { finished: false, results: {} };
+  store.logs[key] = { finished: false, results: {}, updatedAt: new Date().toISOString() };
   editingKey = null;
   editSnapshot = null;
   saveStore();
@@ -313,7 +315,7 @@ function renderEditActions(key) {
   const cancel = el("button", "plain", "Скасувати зміни");
   cancel.type = "button";
   cancel.addEventListener("click", () => {
-    store.logs[key] = editSnapshot;
+    store.logs[key] = { ...editSnapshot, updatedAt: new Date().toISOString() };
     editingKey = null;
     editSnapshot = null;
     saveStore();
@@ -334,6 +336,7 @@ function renderFinish(key) {
       return;
     }
     store.logs[key].finished = true;
+    store.logs[key].updatedAt = new Date().toISOString();
     saveStore();
     render();
     document.getElementById("summary-card").scrollIntoView({ block: "nearest" });
