@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Тренування</title>
+    <meta name="theme-color" content="#1f6f50" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon-192.png" type="image/png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <p class="notice" id="storage-warning" role="alert" hidden>Не вдалося зберегти результати на цьому пристрої. Перевірте налаштування браузера.</p>
+      <nav class="week" id="week" aria-label="Дні тижня"></nav>
+      <header>
+        <p class="eyebrow" id="eyebrow"></p>
+        <h1 class="title" id="title"></h1>
+        <p class="summary" id="summary"></p>
+        <button class="back-today" id="back-today" type="button" hidden>Повернутися до сьогодні</button>
+      </header>
+      <div class="content" id="content"></div>
+      <section class="data-panel" id="data-panel" aria-label="Дані й резервні копії"></section>
+    </main>
+    <script src="program.js"></script>
+    <script src="progress.js"></script>
+    <script src="app.js"></script>
+    <script src="backup.js"></script>
+  </body>
+</html>
