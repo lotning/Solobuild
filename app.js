@@ -172,6 +172,7 @@ function renderExercise(exercise, sets, key, context) {
     ),
     details ? el("p", "exercise-details", details) : null,
     el("p", "exercise-cue", exercise.cue),
+    renderHowTo(exercise.guide, exercise.name, "Як виконувати"),
     lastText ? el("p", "exercise-last", lastText) : null,
     context.canLog ? setInputs(exercise, sets, key, context) : null,
   );
@@ -185,8 +186,36 @@ function testDetails(exercise, progress) {
 }
 
 function renderSteps(title, steps) {
-  const list = el("ul", "steps", ...steps.map((step) => el("li", null, step)));
+  const list = el(
+    "ul",
+    "steps",
+    ...steps.map((step) => {
+      const text = typeof step === "string" ? step : step.text;
+      const guide = typeof step === "string" ? null : step.guide;
+      return el("li", null, renderHowTo(guide, text, text, "step-howto") || text);
+    }),
+  );
   return el("details", "phase", el("summary", null, title), list);
+}
+
+// Розгортуваний блок із анімацією й поясненням техніки.
+function renderHowTo(key, name, title, className = "howto") {
+  const guide = typeof GUIDES !== "undefined" && key ? GUIDES[key] : null;
+  if (!guide) return null;
+  const figure = el("div", "howto-figure");
+  const body = el("div", "howto-body", figure);
+  const section = (heading, items, ordered) => {
+    if (!items || !items.length) return;
+    body.append(el("h4", "howto-heading", heading), el(ordered ? "ol" : "ul", ordered ? "howto-steps" : "howto-list", ...items.map((item) => el("li", null, item))));
+  };
+  section("Як виконувати", guide.steps, true);
+  section("Часті помилки", guide.mistakes, false);
+  if (guide.feel) body.append(el("p", "howto-note", el("strong", null, "Де відчувати: "), guide.feel));
+  if (guide.breath) body.append(el("p", "howto-note", el("strong", null, "Дихання: "), guide.breath));
+  if (guide.level) body.append(el("p", "howto-note", guide.level));
+  const details = el("details", className, el("summary", null, title), body);
+  mountFigure(figure, details, guide, `Схема виконання: ${name}`);
+  return details;
 }
 
 function hasAnyResult(key) {

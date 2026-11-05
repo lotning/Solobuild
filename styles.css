@@ -183,7 +183,7 @@ summary:focus-visible {
   padding: 0 16px 14px;
 }
 
-.steps li {
+.steps > li {
   padding: 6px 0;
   border-top: 1px solid var(--line);
 }
@@ -564,4 +564,122 @@ summary:focus-visible {
 .tip-title {
   font-size: 17px;
   font-weight: 600;
+}
+
+/* Пояснення техніки */
+.howto {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.howto > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding-top: 6px;
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.howto > summary::-webkit-details-marker,
+.step-howto > summary::-webkit-details-marker {
+  display: none;
+}
+
+.howto > summary::after,
+.step-howto > summary::after {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-left: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.15s;
+}
+
+.howto[open] > summary::after,
+.step-howto[open] > summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.step-howto > summary {
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.step-howto > summary::after {
+  color: var(--accent);
+}
+
+.step-howto .howto-body {
+  padding: 8px 0 6px;
+}
+
+.howto-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+  font-size: 15px;
+}
+
+.howto-figure {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+  padding: 6px 4px 0;
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.howto-figure svg {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  max-height: 210px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.howto-figure.is-pair svg {
+  width: 50%;
+}
+
+.howto-heading {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.howto-steps,
+.howto-list {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.howto-list {
+  list-style: disc;
+}
+
+.howto-steps li + li,
+.howto-list li + li {
+  margin-top: 4px;
+}
+
+.howto-note {
+  margin-top: 2px;
 }
