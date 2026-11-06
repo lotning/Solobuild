@@ -297,6 +297,23 @@ summary:focus-visible {
   margin-bottom: 16px;
 }
 
+.exercise-calories {
+  margin-top: 2px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.calories-note {
+  padding: 0 16px 14px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.summary-calories {
+  margin-top: 12px;
+  font-weight: 600;
+}
+
 .exercise-last {
   margin-top: 6px;
   font-size: 14px;

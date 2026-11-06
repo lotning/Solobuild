@@ -8,8 +8,8 @@ function harderLevels(name, firstLevels = []) {
   return [
     {},
     ...firstLevels,
-    { name: `${name}, опускання 3 с` },
-    { name: `${name}, пауза 1–2 с` },
+    { name: `${name}, опускання 3 с`, repExtra: 2 },
+    { name: `${name}, пауза 1–2 с`, repExtra: 1.5 },
   ];
 }
 
@@ -98,9 +98,9 @@ const TRAINING_DAYS = {
         title: "Основна частина",
         exercises: [
           { id: "tue_goblet", guide: "goblet", name: "Присідання з гантеллю біля грудей", weight: "15 кг", sets: 4, target: 15, max: 25, levels: harderLevels("Присідання з гантеллю"), cue: "Спина рівна, п'яти на підлозі, коліна йдуть у напрямку носків." },
-          { id: "tue_split", guide: "split_squat", name: "Болгарські випади", weight: "без ваги", side: "нога", sets: 3, target: 8, max: 12, levels: [{}, { weight: "10 кг" }, { weight: "15 кг" }, { name: "Болгарські випади, опускання 3 с", weight: "15 кг" }], cue: "Задня нога на опорі, опускайтеся вниз, а не вперед." },
+          { id: "tue_split", guide: "split_squat", name: "Болгарські випади", weight: "без ваги", side: "нога", sets: 3, target: 8, max: 12, levels: [{}, { weight: "10 кг" }, { weight: "15 кг" }, { name: "Болгарські випади, опускання 3 с", weight: "15 кг", repExtra: 2 }], cue: "Задня нога на опорі, опускайтеся вниз, а не вперед." },
           { id: "tue_rdl", guide: "rdl", name: "Румунська тяга", weight: "15 кг", sets: 3, target: 12, max: 20, levels: harderLevels("Румунська тяга"), cue: "Відводьте таз назад, спина рівна, коліна злегка зігнуті." },
-          { id: "tue_bridge", guide: "bridge_single", name: "Сідничний місток на одній нозі", side: "нога", sets: 3, target: 10, max: 15, levels: [{}, { name: "Сідничний місток на одній нозі, пауза 2 с" }], cue: "Підіймайте таз сідницею, а не прогином у попереку." },
+          { id: "tue_bridge", guide: "bridge_single", name: "Сідничний місток на одній нозі", side: "нога", sets: 3, target: 10, max: 15, levels: [{}, { name: "Сідничний місток на одній нозі, пауза 2 с", repExtra: 2 }], cue: "Підіймайте таз сідницею, а не прогином у попереку." },
           { id: "tue_calves", guide: "calf", name: "Підйоми на носки", sets: 3, target: 15, max: 25, levels: [{}, { name: "Підйоми на носок на одній нозі", side: "нога" }], cue: "Повна амплітуда й коротка пауза вгорі." },
           { id: "tue_side_plank", guide: "side_plank", name: "Бічна планка", side: "бік", sets: 3, target: 20, max: 45, unit: "с", levels: [{}, { name: "Бічна планка з піднятою ногою", guide: "side_plank_leg" }], cue: "Лікоть під плечем, тіло в одну лінію, таз не опускайте." },
         ],

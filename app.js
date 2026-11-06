@@ -161,6 +161,8 @@ function renderExercise(exercise, sets, key, context) {
   const details = context.isTest ? testDetails(exercise, context.progress) : detailsText(exercise);
   const last = context.progress.lastResults[exercise.id];
   const lastText = last && !context.isTest ? `Минулого разу: ${last.map((value) => value ?? "—").join(", ")}` : null;
+  const kcal = context.isTest ? 0 : exerciseKcal(exercise, sets, null, context.circuit);
+  const kcalLabel = context.circuit ? "за всі кола" : "разом із відпочинком";
   return el(
     "li",
     "exercise",
@@ -171,6 +173,7 @@ function renderExercise(exercise, sets, key, context) {
       el("p", "exercise-target", context.isTest ? "Макс." : targetText(exercise, sets, context.circuit)),
     ),
     details ? el("p", "exercise-details", details) : null,
+    kcal ? el("p", "exercise-calories", `${kcalText(kcal)} ${kcalLabel}`) : null,
     el("p", "exercise-cue", exercise.cue),
     renderHowTo(exercise.guide, exercise.name, "Як виконувати"),
     lastText ? el("p", "exercise-last", lastText) : null,
@@ -269,6 +272,7 @@ function buildSummary(key) {
     el("h2", "summary-title", plan.isTest ? "Результати тесту збережено" : "Тренування збережено"),
     el("p", "summary-note", plan.isTest ? "Тест не змінює цілі тренувань." : "Цілі на наступні тренування:"),
     el("ul", "summary-list", ...rows),
+    el("p", "summary-calories", `Орієнтовно витрачено: ${kcalText(dayKcal(plan, progress, log), 10)}`),
   );
   summary.id = "summary-card";
   return summary;
@@ -374,6 +378,20 @@ function renderFinish(key) {
   return wrap;
 }
 
+function renderCalories(plan, progress) {
+  const title = plan.isTest ? "Калорії: залежать від результату тесту" : `Калорії за план: ${kcalText(dayKcal(plan, progress), 10)}`;
+  return el(
+    "details",
+    "phase",
+    el("summary", null, title),
+    el(
+      "p",
+      "calories-note",
+      `Це груба оцінка для ваги ${BODY_WEIGHT_KG} кг, а реальна витрата може відрізнятися на третину й більше. У неї входять розминка, розтяжка, відпочинок і базовий обмін, тому число завжди більше за «чисті» витрати на вправи. Не варто точно підганяти під нього харчування.`,
+    ),
+  );
+}
+
 function renderTraining(key, plan) {
   const progress = computeProgress(store, key);
   const canLog = key <= todayKey;
@@ -381,6 +399,7 @@ function renderTraining(key, plan) {
 
   if (plan.deload) main.append(el("p", "notice", "Легкий тиждень: підходів на третину менше, а цілі не змінюються."));
   if (progress.breakApplied) main.append(el("p", "notice", "Після перерви понад 7 днів цілі знижено приблизно на 15%."));
+  main.append(renderCalories(plan, progress));
   main.append(renderSteps("Розминка · 10 хв", plan.day.warmup));
 
   plan.day.blocks.forEach((block) => {
