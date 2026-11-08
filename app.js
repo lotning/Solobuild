@@ -92,7 +92,10 @@ function setResult(key, id, index, raw) {
   log.results[id][index] = Number.isNaN(parsed) ? null : Math.min(9999, Math.max(0, parsed));
   log.updatedAt = new Date().toISOString();
   saveStore();
-  if (log.finished) refreshSummary(key);
+  if (log.finished) {
+    refreshSummary(key);
+    if (typeof renderGamePanel === "function") renderGamePanel();
+  }
   refreshClearDay(key);
 }
 
@@ -273,6 +276,7 @@ function buildSummary(key) {
     el("p", "summary-note", plan.isTest ? "Тест не змінює цілі тренувань." : "Цілі на наступні тренування:"),
     el("ul", "summary-list", ...rows),
     el("p", "summary-calories", `Орієнтовно витрачено: ${kcalText(dayKcal(plan, progress, log), 10)}`),
+    typeof renderDayRewards === "function" ? renderDayRewards(key) : null,
   );
   summary.id = "summary-card";
   return summary;
@@ -523,6 +527,7 @@ function render() {
 
   const content = document.getElementById("content");
   content.replaceChildren(plan.day ? renderTraining(key, plan) : renderRecovery(selectedIndex));
+  if (typeof renderGamePanel === "function") renderGamePanel();
   if (typeof renderDataPanel === "function") renderDataPanel();
 }
 
