@@ -772,7 +772,7 @@ summary:focus-visible {
 
 .badges {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 8px;
 }
 
@@ -822,10 +822,32 @@ summary:focus-visible {
   line-height: 1.3;
 }
 
-.badge-note {
+.badge-note,
+.badge-date {
   margin-top: 2px;
   font-size: 12px;
   line-height: 1.3;
+}
+
+.badge-lore {
+  margin-top: 4px;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.badge.is-unlocked .badge-note,
+.badge-date {
+  color: var(--muted);
+}
+
+.game-total {
+  font-weight: 600;
+}
+
+.reward-lore {
+  margin: -2px 0 4px 18px;
+  font-style: italic;
 }
 
 .game-records li,

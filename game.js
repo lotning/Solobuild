@@ -16,34 +16,58 @@ const LEVEL_STEP_XP = 100;
 const FULL_STREAK_WEEKS = CYCLE_WEEKS;
 const TRAINING_INDEXES = Object.keys(TRAINING_DAYS).map(Number);
 
-function countAchievement(id, title, text, key, count) {
-  return { id, title, text, test: (c) => c[key] >= count };
+// lore — коротка «ігрова» репліка, яку видно після отримання досягнення.
+function countAchievement(id, title, text, key, count, lore) {
+  return { id, title, text, lore, test: (c) => c[key] >= count };
 }
 
+// Найкращий підхід у вправі на будь-якому варіанті складності.
+function bestAchievement(id, exerciseId, value, title, text, lore) {
+  return { id, title, text, lore, test: (c) => (c.best[exerciseId] || 0) >= value };
+}
+
+function kcalAchievement(id, kcal, title, lore) {
+  return countAchievement(id, title, `Спаліть орієнтовно ${kcal.toLocaleString("uk-UA")} ккал за всі тренування.`, "kcal", kcal, lore);
+}
+
+const TEST_GOAL_LORE = {
+  test_pushup: "Сорок віджимань поспіль. Тепер можна віджиматися на спір — і вигравати.",
+  test_squat: "Вісімдесят присідань. Ноги, які витримають і весілля до ранку, і переїзд на дев'ятий поверх без ліфта.",
+  test_plank: "Дві хвилини двадцять секунд у планці. Прес готовий тримати удар — і незручну паузу в розмові.",
+};
+
 const ACHIEVEMENTS = [
-  countAchievement("first", "Перший крок", "Завершіть перше тренування.", "workouts", 1),
-  countAchievement("workouts_10", "Розгін", "Завершіть 10 тренувань.", "workouts", 10),
-  countAchievement("workouts_25", "Звичка", "Завершіть 25 тренувань.", "workouts", 25),
-  countAchievement("workouts_50", "Півсотні", "Завершіть 50 тренувань.", "workouts", 50),
-  countAchievement("workouts_100", "Сотня", "Завершіть 100 тренувань.", "workouts", 100),
-  countAchievement("perfect", "Чисто за планом", "Виконайте всі цілі одного тренування.", "perfect", 1),
-  countAchievement("perfect_10", "Точність", "10 тренувань, повністю виконаних за планом.", "perfect", 10),
-  countAchievement("week", "Повний тиждень", `Виконайте всі ${TRAINING_INDEXES.length} тренування за тиждень.`, "fullWeeks", 1),
-  countAchievement("cycle", "Цикл без пропусків", `${FULL_STREAK_WEEKS} повних тижнів поспіль.`, "bestStreak", FULL_STREAK_WEEKS),
-  countAchievement("levelup", "Новий ступінь", "Перейдіть на складніший варіант вправи.", "levelups", 1),
-  countAchievement("levelup_5", "Майстер варіацій", "5 переходів на складніші варіанти.", "levelups", 5),
-  countAchievement("record", "Рекордсмен", "Поставте перший особистий рекорд.", "records", 1),
-  countAchievement("record_50", "Серія рекордів", "Поставте 50 особистих рекордів.", "records", 50),
-  countAchievement("test", "Перевірка сил", "Пройдіть тест на максимум.", "tests", 1),
+  countAchievement("first", "Перший крок", "Завершіть перше тренування.", "workouts", 1, "Найважче позаду: «почну з понеділка» вже не про тебе."),
+  countAchievement("workouts_10", "Розгін", "Завершіть 10 тренувань.", "workouts", 10, "Сходи на п'ятий поверх більше не здаються Еверестом."),
+  countAchievement("workouts_25", "Звичка", "Завершіть 25 тренувань.", "workouts", 25, "Тепер пропустити тренування дивніше, ніж прийти на нього."),
+  countAchievement("workouts_50", "Півсотні", "Завершіть 50 тренувань.", "workouts", 50, "Усі пакети із супермаркету — за один захід. Завжди."),
+  countAchievement("workouts_100", "Сотня", "Завершіть 100 тренувань.", "workouts", 100, "Сто перемог над диваном. Диван ображений, але змирився."),
+  countAchievement("perfect", "Чисто за планом", "Виконайте всі цілі одного тренування.", "perfect", 1, "Усе до останнього повторення. Внутрішній тренер задоволено киває."),
+  countAchievement("perfect_10", "Точність", "10 тренувань, повністю виконаних за планом.", "perfect", 10, "Десять тренувань без жодного «ну, майже». Дисципліна +10."),
+  countAchievement("week", "Повний тиждень", `Виконайте всі ${TRAINING_INDEXES.length} тренування за тиждень.`, "fullWeeks", 1, "Тиждень закрито повністю. Понеділок тебе більше не лякає."),
+  countAchievement("cycle", "Цикл без пропусків", `${FULL_STREAK_WEEKS} повних тижнів поспіль.`, "bestStreak", FULL_STREAK_WEEKS, "П'ять тижнів без пропусків. Друзі вже питають, що це за програма."),
+  countAchievement("levelup", "Новий ступінь", "Перейдіть на складніший варіант вправи.", "levelups", 1, "Стара вправа стала замалою, як дитячий светр."),
+  countAchievement("levelup_5", "Майстер варіацій", "5 переходів на складніші варіанти.", "levelups", 5, "Тіло вчиться швидше, ніж встигаєш придумати виправдання."),
+  countAchievement("record", "Рекордсмен", "Поставте перший особистий рекорд.", "records", 1, "Вчорашній ти щойно програв сьогоднішньому."),
+  countAchievement("record_50", "Серія рекордів", "Поставте 50 особистих рекордів.", "records", 50, "Рекорди падають так часто, що вже не встигаєш святкувати."),
+  bestAchievement("carry", "thu_carry", 60, "Носій", "Пройдіть 60 с із гантеллю в одній руці.", "Тепер можна носити кохану людину на руках — і не лише через поріг."),
+  bestAchievement("grip", "thu_grip", 25, "Залізна хватка", "25 стискань еспандера в одному підході.", "Банки з огірками більше не мають шансів. Тепер тебе кличуть відкривати все в домі."),
+  bestAchievement("pushups_15", "mon_pushup", 15, "Опора сім'ї", "15 віджимань в одному підході.", "Якщо доведеться штовхати машину, що заглохла, — ти перший у черзі."),
+  countAchievement("test", "Перевірка сил", "Пройдіть тест на максимум.", "tests", 1, "Чесний замір сил. Тепер є з чим порівнювати."),
   ...TEST_DAY.blocks
     .flatMap((block) => block.exercises)
     .map((exercise) => ({
       id: `goal_${exercise.id}`,
       title: `Ціль тесту: ${exercise.name.toLowerCase()}`,
       text: `${exercise.goal}${exercise.unit ? ` ${exercise.unit}` : ""} в одному підході під час тесту.`,
+      lore: TEST_GOAL_LORE[exercise.id],
       test: (c) => Boolean(c.goals[exercise.id]),
     })),
-  countAchievement("comeback", "Повернення", "Поверніться до тренувань після перерви понад 7 днів.", "comebacks", 1),
+  kcalAchievement("kcal_1000", 1000, "Піца, якої не було", "Ціла піца перетворилася на рух. Вона прожила недарма."),
+  kcalAchievement("kcal_7700", 7700, "Мінус кілограм", "Приблизно стільки енергії в кілограмі жиру. Принаймні на папері."),
+  kcalAchievement("kcal_20000", 20000, "Святковий стіл", "Спалено цілий новорічний стіл. Олів'є теж."),
+  kcalAchievement("kcal_50000", 50000, "Доменна піч", "Від тебе можна грітися взимку. Сусіди вже питають тариф."),
+  countAchievement("comeback", "Повернення", "Поверніться до тренувань після перерви понад 7 днів.", "comebacks", 1, "Повернутися важче, ніж почати. І все ж ти тут."),
 ];
 
 // Скільки досвіду потрібно для рівня: 1 — 0, 2 — 200, 3 — 600, 4 — 1200…
@@ -83,7 +107,7 @@ function computeGame(store) {
   const recordNames = {};
   const days = {};
   const unlocked = {};
-  const counters = { workouts: 0, perfect: 0, fullWeeks: 0, bestStreak: 0, levelups: 0, records: 0, tests: 0, comebacks: 0, goals: {} };
+  const counters = { workouts: 0, perfect: 0, fullWeeks: 0, bestStreak: 0, levelups: 0, records: 0, tests: 0, comebacks: 0, kcal: 0, goals: {}, best: {} };
   let xp = 0;
   let streak = 0;
   let lastFullMonday = null;
@@ -106,6 +130,7 @@ function computeGame(store) {
         counters.comebacks += 1;
       }
       counters.workouts += 1;
+      counters.kcal += dayKcal(plan, { states }, log);
       award(plan.isTest ? "Тест пройдено" : "Тренування завершено", XP.workout);
 
       let met = 0;
@@ -130,7 +155,11 @@ function computeGame(store) {
           const values = filledValues(results, sets);
           if (values.length === sets && values.every((value) => value >= current.target)) met += 1;
           else allMet = false;
-          if (values.length) checkRecord(`${exercise.id}:${current.level}`, resolveExercise(exercise, current), Math.max(...values));
+          if (values.length) {
+            const top = Math.max(...values);
+            checkRecord(`${exercise.id}:${current.level}`, resolveExercise(exercise, current), top);
+            counters.best[exercise.id] = Math.max(counters.best[exercise.id] || 0, top);
+          }
           const { state, status } = advance(exercise, current, results, plan.deload);
           if (status === "levelup") levelups += 1;
           states[exercise.id] = state;
@@ -200,6 +229,7 @@ function computeGame(store) {
     days,
     unlocked,
     counters,
+    kcal: counters.kcal,
     records: bestRecords(best, recordNames),
   };
 }
@@ -266,7 +296,9 @@ function renderGamePanel() {
           "span",
           "badge-text",
           el("strong", "badge-title", achievement.title),
-          el("span", "badge-note", date ? `Отримано ${formatDay(date)}` : achievement.text),
+          el("span", "badge-note", achievement.text),
+          date && achievement.lore ? el("span", "badge-lore", achievement.lore) : null,
+          date ? el("span", "badge-date", `Отримано ${formatDay(date)}`) : null,
         ),
       );
     }),
@@ -287,6 +319,7 @@ function renderGamePanel() {
     "game-body",
     el("h3", "howto-heading", "Досягнення"),
     badges,
+    el("p", "game-total", `Усього спалено за тренування: ${kcalText(game.kcal, 10)}`),
     el("h3", "howto-heading", "Особисті рекорди"),
     el("p", "block-note", "Найкращий підхід у кожній вправі на поточному варіанті складності."),
     records,
@@ -323,7 +356,10 @@ function renderDayRewards(key) {
       lines.push(el("p", "reward-line", `Новий рекорд: ${record.name.toLowerCase()} — ${record.value}${unit} (було ${record.previous}${unit})`));
     });
   }
-  day.achievements.forEach((achievement) => lines.push(el("p", "reward-line", `★ Досягнення «${achievement.title}»`)));
+  day.achievements.forEach((achievement) => {
+    lines.push(el("p", "reward-line", `★ Досягнення «${achievement.title}»`));
+    if (achievement.lore) lines.push(el("p", "reward-lore", achievement.lore));
+  });
   return el(
     "div",
     "rewards",
