@@ -25,6 +25,8 @@ const CALORIE_RATES = {
   tue_bridge: { met: 3.5, rep: 2.5 },
   tue_calves: { met: 3, rep: 2 },
   tue_side_plank: { met: 3.5 },
+  tue_hollow: { met: 3.5 },
+  tue_vacuum: { met: 2 },
   thu_row: { met: 5, rep: 2.5 },
   thu_pullover: { met: 3.5, rep: 3 },
   thu_y_raise: { met: 2.8, rep: 2.5 },
