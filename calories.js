@@ -38,6 +38,7 @@ const CALORIE_RATES = {
   fri_plank: { met: 4 },
   fri_lunge: { met: 6, rep: 2.5 },
   fri_row: { met: 5, rep: 2.5 },
+  fri_pike: { met: 4, rep: 3 },
   test_pushup: { met: 8, rep: 2 },
   test_squat: { met: 5, rep: 2 },
   test_plank: { met: 4 },

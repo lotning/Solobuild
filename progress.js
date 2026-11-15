@@ -4,7 +4,6 @@
 const CYCLE_WEEKS = 5;
 const TEST_WEEK = 4;
 const DELOAD_WEEK = 5;
-const TEST_WEEKDAY = 4;
 const BREAK_DAYS = 7;
 const FAILS_BEFORE_DROP = 2;
 
@@ -47,8 +46,9 @@ function planFor(key, startDate) {
   const index = weekdayIndex(key);
   const week = cycleWeek(key, startDate);
   const deload = week === DELOAD_WEEK;
-  let day = TRAINING_DAYS[index] || null;
-  if (day && index === TEST_WEEKDAY && week === TEST_WEEK) day = TEST_DAY;
+  const schedule = scheduleFor(key);
+  let day = schedule.days[index] || null;
+  if (day && index === schedule.testWeekday && week === TEST_WEEK) day = TEST_DAY;
   return { day, week, deload, isTest: Boolean(day && day.test) };
 }
 
@@ -57,7 +57,11 @@ function plannedSets(exercise, deload) {
 }
 
 function allExercises() {
-  return Object.values(TRAINING_DAYS).flatMap((day) => day.blocks.flatMap((block) => block.exercises));
+  const seen = new Set();
+  return [TRAINING_DAYS, ...SCHEDULE_HISTORY.map((entry) => entry.days)]
+    .flatMap((days) => Object.values(days))
+    .flatMap((day) => day.blocks.flatMap((block) => block.exercises))
+    .filter((exercise) => !seen.has(exercise.id) && seen.add(exercise.id));
 }
 
 function initialState() {

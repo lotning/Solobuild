@@ -1,5 +1,6 @@
 // Програма тренувань: усі вправи, цілі й поради зберігаються тут.
 // Дні тижня: 0 — понеділок ... 6 — неділя.
+// Старі розклади лежать у SCHEDULE_HISTORY, щоб записи минулих тижнів рахувалися за тим розкладом, що діяв тоді.
 // id вправи не можна змінювати: за ним зберігаються ваші результати.
 // levels — наступні ступені складності після досягнення верхньої межі (max).
 // guide — ключ пояснення техніки з guides.js (анімація, кроки, помилки).
@@ -108,7 +109,7 @@ const TRAINING_DAYS = {
       },
     ],
   },
-  3: {
+  2: {
     title: "Спина, біцепс, хват",
     warmup: WARMUPS.pull,
     cooldown: COOLDOWNS.pull,
@@ -126,7 +127,7 @@ const TRAINING_DAYS = {
       },
     ],
   },
-  4: {
+  3: {
     title: "Витривалість",
     warmup: WARMUPS.full,
     cooldown: COOLDOWNS.full,
@@ -145,14 +146,14 @@ const TRAINING_DAYS = {
         title: "Після кіл",
         exercises: [
           { id: "fri_lunge", guide: "lunge", name: "Випади назад", weight: "без ваги", side: "нога", sets: 3, target: 10, max: 15, cue: "Крок назад, корпус прямий, переднє коліно стабільне." },
-          { id: "fri_row", guide: "row", name: "Тяга гантелі в нахилі", weight: "15 кг", side: "рука", sets: 3, target: 10, max: 15, cue: "Спина рівна, тягніть ліктем до стегна." },
+          { id: "fri_pike", guide: "pike_pushup", name: "Пайк-віджимання", sets: 3, target: 6, max: 12, levels: [{}, { name: "Пайк-віджимання з ногами на опорі", guide: "pike_pushup_elevated", cue: "Стопи на стільці чи дивані, таз високо над плечима. Ваги на руках більше." }], cue: "Таз високо, тіло як перевернута V. Голова опускається між руками, лікті йдуть назад, а не в боки." },
         ],
       },
     ],
   },
 };
 
-// П'ятниця 4-го тижня кожного циклу: замість кіл перевіряємо максимум.
+// Четвер 4-го тижня кожного циклу: замість кіл перевіряємо максимум.
 const TEST_DAY = {
   title: "Тест на максимум",
   warmup: WARMUPS.full,
@@ -192,5 +193,36 @@ const RECOVERY = {
     "Алкоголь погіршує сон, а отже й відновлення. Якщо вживаєте, то помірно.",
   ],
 };
+
+// Розклад до 16.11.2026: спина в четвер, витривалість у п'ятницю (з тягою замість пайк-віджимань).
+const SCHEDULE_HISTORY = [
+  {
+    until: "2026-11-16",
+    testWeekday: 4,
+    days: {
+      0: TRAINING_DAYS[0],
+      1: TRAINING_DAYS[1],
+      3: TRAINING_DAYS[2],
+      4: {
+        ...TRAINING_DAYS[3],
+        blocks: TRAINING_DAYS[3].blocks.map((block) => ({
+          ...block,
+          exercises: block.exercises.map((exercise) =>
+            exercise.id === "fri_pike"
+              ? { id: "fri_row", guide: "row", name: "Тяга гантелі в нахилі", weight: "15 кг", side: "рука", sets: 3, target: 10, max: 15, cue: "Спина рівна, тягніть ліктем до стегна." }
+              : exercise,
+          ),
+        })),
+      },
+    },
+  },
+];
+const CURRENT_TEST_WEEKDAY = 3;
+
+// Розклад, що діяв на дату key (рядок РРРР-ММ-ДД).
+function scheduleFor(key) {
+  const old = SCHEDULE_HISTORY.find((entry) => key < entry.until);
+  return old ? { days: old.days, testWeekday: old.testWeekday } : { days: TRAINING_DAYS, testWeekday: CURRENT_TEST_WEEKDAY };
+}
 
 const REST_NOTE = "Відпочинок між підходами: 1–2 хв.";

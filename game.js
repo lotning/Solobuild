@@ -93,7 +93,8 @@ function isCountedDay(store, key) {
 
 function isFullWeek(store, key) {
   const monday = mondayKey(key);
-  return TRAINING_INDEXES.every((index) => {
+  const indexes = Object.keys(scheduleFor(monday).days).map(Number);
+  return indexes.every((index) => {
     const date = parseKey(monday);
     date.setDate(date.getDate() + index);
     const dayKey = toKey(date);
