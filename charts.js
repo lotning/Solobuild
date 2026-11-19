@@ -1,4 +1,4 @@
-// Панель «Прогрес і тіло»: графіки вправ, тестів і замірів тіла.
+// Розділи «Прогрес» (графіки вправ і тестів) і «Тіло» (заміри з ваг).
 // Графіки — прості SVG-лінії без бібліотек, малюються під ширину екрана.
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -6,7 +6,7 @@ const CHART_HEIGHT = 190;
 const CHART_MARGIN = { top: 16, right: 16, bottom: 26, left: 40 };
 const DOTS_LIMIT = 40;
 
-const progressView = { open: false, tab: "exercises", exercise: null, metric: "weight", message: null };
+const progressView = { tab: "exercises", exercise: null, metric: "weight", message: null };
 
 function svgEl(tag, attrs = {}, ...children) {
   const node = document.createElementNS(SVG_NS, tag);
@@ -147,8 +147,7 @@ let chartResizeTimer = null;
 window.addEventListener("resize", () => {
   clearTimeout(chartResizeTimer);
   chartResizeTimer = setTimeout(() => {
-    const panel = document.getElementById("progress-panel");
-    if (panel) drawCharts(panel);
+    document.querySelectorAll("#progress-panel, #body-panel").forEach(drawCharts);
   }, 150);
 });
 
@@ -204,6 +203,7 @@ function renderExerciseTab(game) {
     lineChart({
       points: history.map((point) => ({ key: point.key, value: point.value, note: `${point.name}${point.weight ? `, ${point.weight}` : ""}` })),
       unit,
+      markers,
       label: `Найкращий підхід: ${latest.name}`,
       valueLabel: unit ? "Секунди" : "Повторення",
     }),
@@ -240,8 +240,15 @@ function renderBodyTab() {
     progressView.message = message;
     render();
   };
-  const parts = [];
+  const parts = [el("h2", "card-title", "Новий замір"), renderBodyForm(rerender)];
+  if (progressView.message) {
+    const status = el("p", "data-status", progressView.message);
+    status.setAttribute("role", "status");
+    parts.push(status);
+    progressView.message = null;
+  }
   if (entries.length) {
+    parts.push(el("h2", "card-title body-section", "Динаміка"));
     parts.push(renderBodyStats(entries));
     const metrics = [
       { id: "weight", name: "Вага", unit: "кг", value: (entry) => entry.weight },
@@ -271,56 +278,45 @@ function renderBodyTab() {
   } else {
     parts.push(el("p", "block-note", "Вписуйте показники з розумних ваг — вага піде в розрахунок калорій і норми білка, а тут з'являться графіки. Зважуйтеся зранку до їжі й води, щоразу в однакових умовах."));
   }
-  parts.push(el("h3", "howto-heading", "Новий замір"), renderBodyForm(rerender));
   if (entries.length) parts.push(renderBodyList(entries, rerender));
-  if (progressView.message) {
-    const status = el("p", "data-status", progressView.message);
-    status.setAttribute("role", "status");
-    parts.push(status);
-    progressView.message = null;
-  }
   return el("div", "progress-tab", ...parts);
 }
 
 const PROGRESS_TABS = [
   { id: "exercises", name: "Вправи" },
   { id: "tests", name: "Тести" },
-  { id: "body", name: "Тіло" },
 ];
+
+// Не перемальовуємо панель, поки людина щось у ній вписує.
+function isTypingIn(panel) {
+  return document.activeElement && panel.contains(document.activeElement) && document.activeElement.matches("input");
+}
 
 function renderProgressPanel() {
   const panel = document.getElementById("progress-panel");
-  if (!panel) return;
-  // Не перемальовуємо, поки людина вписує замір.
-  if (document.activeElement && panel.contains(document.activeElement) && document.activeElement.matches("input")) return;
+  if (!panel || isTypingIn(panel)) return;
+  const tabs = el(
+    "div",
+    "segmented",
+    ...PROGRESS_TABS.map((tab) => {
+      const button = el("button", `segment${tab.id === progressView.tab ? " is-active" : ""}`, tab.name);
+      button.type = "button";
+      button.setAttribute("aria-pressed", String(tab.id === progressView.tab));
+      button.addEventListener("click", () => {
+        progressView.tab = tab.id;
+        renderProgressPanel();
+      });
+      return button;
+    }),
+  );
+  const game = computeGame(store);
+  panel.replaceChildren(tabs, el("div", "card", progressView.tab === "tests" ? renderTestsTab(game) : renderExerciseTab(game)));
+  requestAnimationFrame(() => drawCharts(panel));
+}
 
-  const body = el("div", "data-body");
-  if (progressView.open) {
-    const tabs = el(
-      "div",
-      "segmented",
-      ...PROGRESS_TABS.map((tab) => {
-        const button = el("button", `segment${tab.id === progressView.tab ? " is-active" : ""}`, tab.name);
-        button.type = "button";
-        button.setAttribute("aria-pressed", String(tab.id === progressView.tab));
-        button.addEventListener("click", () => {
-          progressView.tab = tab.id;
-          renderProgressPanel();
-        });
-        return button;
-      }),
-    );
-    const game = progressView.tab === "body" ? null : computeGame(store);
-    const content = progressView.tab === "exercises" ? renderExerciseTab(game) : progressView.tab === "tests" ? renderTestsTab(game) : renderBodyTab();
-    body.append(tabs, content);
-  }
-  const details = el("details", "phase", el("summary", null, "Прогрес і тіло"), body);
-  details.open = progressView.open;
-  details.addEventListener("toggle", () => {
-    if (details.open === progressView.open) return;
-    progressView.open = details.open;
-    renderProgressPanel();
-  });
-  panel.replaceChildren(details);
-  if (progressView.open) requestAnimationFrame(() => drawCharts(panel));
+function renderBodyPanel() {
+  const panel = document.getElementById("body-panel");
+  if (!panel || isTypingIn(panel)) return;
+  panel.replaceChildren(el("div", "card", renderBodyTab()));
+  requestAnimationFrame(() => drawCharts(panel));
 }

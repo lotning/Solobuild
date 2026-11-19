@@ -280,7 +280,7 @@ function renderGamePanel() {
 
   const unlockedCount = Object.keys(game.unlocked).length;
   const summary = el(
-    "summary",
+    "div",
     "game-summary",
     el(
       "span",
@@ -326,13 +326,13 @@ function renderGamePanel() {
   const body = el(
     "div",
     "game-body",
-    el("h3", "howto-heading", "Досягнення"),
+    el("h2", "card-title", "Досягнення"),
     badges,
     el("p", "game-total", `Усього спалено за тренування: ${kcalText(game.kcal, 10)}`),
-    el("h3", "howto-heading", "Особисті рекорди"),
+    el("h2", "card-title", "Особисті рекорди"),
     el("p", "block-note", "Найкращий підхід у кожній вправі на поточному варіанті складності."),
     records,
-    el("h3", "howto-heading", "Як нараховується досвід"),
+    el("h2", "card-title", "Як нараховується досвід"),
     el(
       "ul",
       "howto-list",
@@ -343,11 +343,7 @@ function renderGamePanel() {
     ),
   );
 
-  const details = el("details", "game", summary, body);
-  details.id = "game-panel";
-  details.open = Boolean(panel.open);
-  details.setAttribute("aria-label", "Рівень і досягнення");
-  panel.replaceWith(details);
+  panel.replaceChildren(el("div", "game", summary), el("div", "card", body));
 }
 
 // Що принесло конкретне тренування: показується в підсумку дня.

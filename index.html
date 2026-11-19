@@ -10,21 +10,48 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <nav class="drawer" id="drawer" aria-label="Розділи">
+      <p class="drawer-head">Меню</p>
+      <ul class="drawer-list" id="drawer-list"></ul>
+    </nav>
+    <div class="drawer-overlay" id="drawer-overlay" hidden></div>
     <main class="page">
+      <div class="topbar">
+        <button class="menu-button" id="menu-button" type="button" aria-label="Меню" aria-controls="drawer" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
+      </div>
       <p class="notice" id="storage-warning" role="alert" hidden>Не вдалося зберегти результати на цьому пристрої. Перевірте налаштування браузера.</p>
-      <div class="week-nav" id="week-nav"></div>
-      <nav class="week" id="week" aria-label="Дні тижня"></nav>
-      <header>
-        <p class="eyebrow" id="eyebrow"></p>
-        <h1 class="title" id="title"></h1>
-        <p class="summary" id="summary"></p>
-        <button class="back-today" id="back-today" type="button" hidden>Повернутися до сьогодні</button>
-      </header>
-      <section class="game" id="game-panel" hidden></section>
-      <div class="content" id="content"></div>
-      <section class="data-panel" id="progress-panel" aria-label="Прогрес і тіло"></section>
-      <section class="data-panel data-panel-next" id="sync-panel" aria-label="Синхронізація"></section>
-      <section class="data-panel data-panel-next" id="data-panel" aria-label="Дані й резервні копії"></section>
+      <div class="view" id="view-today">
+        <div class="week-nav" id="week-nav"></div>
+        <nav class="week" id="week" aria-label="Дні тижня"></nav>
+        <header>
+          <p class="eyebrow" id="eyebrow"></p>
+          <h1 class="title" id="title"></h1>
+          <p class="summary" id="summary"></p>
+          <button class="back-today" id="back-today" type="button" hidden>Повернутися до сьогодні</button>
+        </header>
+        <div class="content" id="content"></div>
+      </div>
+      <section class="view" id="view-profile" aria-labelledby="profile-title" hidden>
+        <h1 class="title" id="profile-title">Профіль</h1>
+        <div class="view-body" id="game-panel"></div>
+      </section>
+      <section class="view" id="view-progress" aria-labelledby="progress-title" hidden>
+        <h1 class="title" id="progress-title">Прогрес</h1>
+        <div class="view-body" id="progress-panel"></div>
+      </section>
+      <section class="view" id="view-body" aria-labelledby="body-title" hidden>
+        <h1 class="title" id="body-title">Тіло</h1>
+        <div class="view-body" id="body-panel"></div>
+      </section>
+      <section class="view" id="view-data" aria-labelledby="data-title" hidden>
+        <h1 class="title" id="data-title">Дані</h1>
+        <div class="view-body">
+          <section id="sync-panel" aria-label="Синхронізація"></section>
+          <section id="data-panel" aria-label="Резервні копії"></section>
+        </div>
+      </section>
     </main>
     <script src="program.js"></script>
     <script src="figure.js"></script>
@@ -36,6 +63,7 @@
     <script src="recovery.js"></script>
     <script src="charts.js"></script>
     <script src="timer.js"></script>
+    <script src="menu.js"></script>
     <script src="app.js"></script>
     <script src="backup.js"></script>
     <script src="sync.js"></script>

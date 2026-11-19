@@ -306,13 +306,7 @@ function renderSyncPanel() {
   }
 
   const title = syncConfig ? "Синхронізація увімкнена" : "Синхронізація між пристроями";
-  const details = el("details", "phase", el("summary", null, title), body);
-  details.open = panel.dataset.opened === "true" || Boolean(syncMessage);
-  details.addEventListener("toggle", () => {
-    panel.dataset.opened = String(details.open);
-  });
-  panel.dataset.opened = String(details.open);
-  panel.replaceChildren(details);
+  panel.replaceChildren(el("div", "card", el("h2", "card-title", title), body));
 
   const newInput = document.getElementById("sync-token");
   if (newInput && keptToken) newInput.value = keptToken;

@@ -90,6 +90,10 @@ function isLiveSession(key) {
 }
 
 function openDay(key) {
+  if (currentView !== "today") {
+    history.pushState(null, "", location.pathname + location.search);
+    currentView = "today";
+  }
   weekOffset = Math.round(daysBetween(mondayKey(todayKey), mondayKey(key)) / 7);
   selectedIndex = weekdayIndex(key);
   render();
@@ -151,7 +155,6 @@ function setResult(key, id, index, raw) {
   if (typeof setTrainingAwake === "function") setTrainingAwake(isLiveSession(key) && !log.finished);
   if (log.finished) {
     refreshSummary(key);
-    if (typeof renderGamePanel === "function") renderGamePanel();
   }
   refreshClearDay(key);
 }
@@ -464,7 +467,7 @@ function renderCalories(plan, progress, key) {
     el(
       "p",
       "calories-note",
-      `Це груба оцінка для ваги ${formatDecimal(bodyWeightOn(key))} кг${hasBodyWeight() ? "" : " (додайте свій замір у розділі «Прогрес і тіло»)"}, а реальна витрата може відрізнятися на третину й більше. У неї входять розминка, розтяжка, відпочинок і базовий обмін, тому число завжди більше за «чисті» витрати на вправи. Не варто точно підганяти під нього харчування.`,
+      `Це груба оцінка для ваги ${formatDecimal(bodyWeightOn(key))} кг${hasBodyWeight() ? "" : " (додайте свій замір у розділі «Тіло» в меню)"}, а реальна витрата може відрізнятися на третину й більше. У неї входять розминка, розтяжка, відпочинок і базовий обмін, тому число завжди більше за «чисті» витрати на вправи. Не варто точно підганяти під нього харчування.`,
     ),
   );
 }
@@ -572,6 +575,10 @@ function renderWeekNav() {
 }
 
 function render() {
+  if (currentView !== "today") {
+    renderView();
+    return;
+  }
   renderWeekNav();
   renderWeek();
   const key = toKey(dateForIndex(selectedIndex));
@@ -594,9 +601,7 @@ function render() {
   content.replaceChildren(plan.day ? renderTraining(key, plan) : renderRecovery(selectedIndex));
   const log = store.logs[key];
   if (typeof setTrainingAwake === "function") setTrainingAwake(Boolean(plan.day) && isLiveSession(key) && hasAnyResult(key) && !(log && log.finished));
-  if (typeof renderGamePanel === "function") renderGamePanel();
-  if (typeof renderProgressPanel === "function") renderProgressPanel();
-  if (typeof renderDataPanel === "function") renderDataPanel();
+  renderView();
 }
 
 document.getElementById("back-today").addEventListener("click", () => {

@@ -62,7 +62,7 @@ function daysSinceWeighIn(key) {
 function weighInAdvice(key) {
   const days = daysSinceWeighIn(key);
   const how = "Найточніше зранку після туалету, до їжі й води, щоразу в однакових умовах: відсоток жиру й води на розумних вагах помітно залежить від того, скільки ви випили.";
-  if (days === null) return { name: "Зважування", text: `Додайте вагу, жир і воду в розділі «Прогрес і тіло» внизу сторінки — тоді калорії й норма білка рахуватимуться саме під вас. ${how}` };
+  if (days === null) return { name: "Зважування", text: `Додайте вагу, жир і воду в розділі «Тіло» (меню ☰) — тоді калорії й норма білка рахуватимуться саме під вас. ${how}` };
   if (days >= WEIGH_IN_REMINDER_DAYS) return { name: "Зважування", text: `Останній замір був ${days} ${dayWord(days)} тому. ${how}` };
   return null;
 }
