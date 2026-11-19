@@ -438,18 +438,7 @@ function renderTraining(key, plan) {
 }
 
 function renderRecovery(index) {
-  const tip = RECOVERY.tips[dayOfYear(dateForIndex(index)) % RECOVERY.tips.length];
-  const main = document.createDocumentFragment();
-  main.append(el("p", "intro", RECOVERY.intro));
-  main.append(
-    el(
-      "ul",
-      "recovery",
-      ...RECOVERY.items.map((item) => el("li", "recovery-item", el("h2", "recovery-name", item.name), el("p", null, item.text))),
-    ),
-  );
-  main.append(el("aside", "tip", el("h2", "tip-title", "Порада дня"), el("p", null, tip)));
-  return main;
+  return renderRecoveryDay(toKey(dateForIndex(index)), index);
 }
 
 function renderWeek() {

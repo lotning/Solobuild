@@ -4,6 +4,7 @@
 // id вправи не можна змінювати: за ним зберігаються ваші результати.
 // levels — наступні ступені складності після досягнення верхньої межі (max).
 // guide — ключ пояснення техніки з guides.js (анімація, кроки, помилки).
+// muscles — які групи м'язів навантажує день і наскільки (1 — повністю), для порад у дні відновлення (recovery.js).
 
 function harderLevels(name, firstLevels = []) {
   return [
@@ -75,6 +76,7 @@ const COOLDOWNS = {
 const TRAINING_DAYS = {
   0: {
     title: "Груди, плечі, трицепс",
+    muscles: { chest: 1, shoulders: 1, triceps: 1, core: 0.5 },
     warmup: WARMUPS.upper,
     cooldown: COOLDOWNS.upper,
     blocks: [
@@ -92,6 +94,7 @@ const TRAINING_DAYS = {
   },
   1: {
     title: "Ноги й прес",
+    muscles: { legs: 1, core: 1 },
     warmup: WARMUPS.lower,
     cooldown: COOLDOWNS.lower,
     blocks: [
@@ -111,6 +114,7 @@ const TRAINING_DAYS = {
   },
   2: {
     title: "Спина, біцепс, хват",
+    muscles: { back: 1, biceps: 1, shoulders: 0.5 },
     warmup: WARMUPS.pull,
     cooldown: COOLDOWNS.pull,
     blocks: [
@@ -129,6 +133,7 @@ const TRAINING_DAYS = {
   },
   3: {
     title: "Витривалість",
+    muscles: { legs: 0.6, chest: 0.6, shoulders: 0.6, triceps: 0.5, core: 0.6 },
     warmup: WARMUPS.full,
     cooldown: COOLDOWNS.full,
     blocks: [
@@ -156,6 +161,7 @@ const TRAINING_DAYS = {
 // Четвер 4-го тижня кожного циклу: замість кіл перевіряємо максимум.
 const TEST_DAY = {
   title: "Тест на максимум",
+  muscles: { chest: 1, triceps: 0.7, legs: 0.8, core: 1 },
   warmup: WARMUPS.full,
   cooldown: COOLDOWNS.full,
   test: true,
@@ -172,12 +178,12 @@ const TEST_DAY = {
   ],
 };
 
+// Загальні поради для днів відновлення; контекстні (стан м'язів, рух, наступне тренування) — у recovery.js.
 // Білок: 1,6–2,2 г на кг при вазі 90 кг.
 const RECOVERY = {
   title: "День відновлення",
   intro: "Сьогодні без тренування. М'язи ростуть і відновлюються саме між навантаженнями.",
   items: [
-    { name: "Рух за бажанням", text: "5–10 хв легкої зарядки або прогулянка 20–30 хв." },
     { name: "Сон", text: "7–9 годин. Намагайтеся лягати приблизно в той самий час." },
     { name: "Білок", text: "Приблизно 145–200 г на день. Це 1,6–2,2 г на кг при вазі 90 кг." },
     { name: "Вода", text: "Орієнтовно близько 3 л на день, у спеку більше." },
@@ -205,6 +211,7 @@ const SCHEDULE_HISTORY = [
       3: TRAINING_DAYS[2],
       4: {
         ...TRAINING_DAYS[3],
+        muscles: { legs: 0.6, chest: 0.6, back: 0.5, triceps: 0.5, core: 0.6 },
         blocks: TRAINING_DAYS[3].blocks.map((block) => ({
           ...block,
           exercises: block.exercises.map((exercise) =>

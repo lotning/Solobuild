@@ -1,6 +1,6 @@
 // Робота без інтернету: усі файли застосунку зберігаються на пристрої.
 // Після будь-якої зміни файлів застосунку збільшуйте номер версії, інакше пристрої її не отримають.
-const CACHE_VERSION = "workout-app-9";
+const CACHE_VERSION = "workout-app-10";
 const FILES = [
   "./",
   "./index.html",
@@ -11,6 +11,7 @@ const FILES = [
   "./progress.js",
   "./calories.js",
   "./game.js",
+  "./recovery.js",
   "./app.js",
   "./backup.js",
   "./sync.js",
