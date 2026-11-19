@@ -16,6 +16,7 @@ function readLastExport() {
 function isValidLog(log) {
   if (!log || typeof log !== "object" || typeof log.finished !== "boolean") return false;
   if (log.updatedAt !== undefined && typeof log.updatedAt !== "string") return false;
+  if (log.doneOn !== undefined && !(typeof log.doneOn === "string" && DATE_PATTERN.test(log.doneOn))) return false;
   if (!log.results || typeof log.results !== "object" || Array.isArray(log.results)) return false;
   return Object.entries(log.results).every(
     ([id, values]) =>
@@ -25,15 +26,29 @@ function isValidLog(log) {
   );
 }
 
+function isValidMeasurement(entry) {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
+  if (entry.updatedAt !== undefined && typeof entry.updatedAt !== "string") return false;
+  if (entry.deleted !== undefined && entry.deleted !== true) return false;
+  return Object.keys(BODY_METRICS).every((metric) => entry[metric] === undefined || (typeof entry[metric] === "number" && Number.isFinite(entry[metric])));
+}
+
 function isValidBackup(data) {
   if (!data || typeof data !== "object" || data.version !== 1) return false;
   if (data.startDate !== null && !(typeof data.startDate === "string" && DATE_PATTERN.test(data.startDate))) return false;
   if (!data.logs || typeof data.logs !== "object" || Array.isArray(data.logs)) return false;
+  if (data.body !== undefined && (!data.body || typeof data.body !== "object" || Array.isArray(data.body))) return false;
+  if (data.body && !Object.entries(data.body).every(([key, entry]) => DATE_PATTERN.test(key) && isValidMeasurement(entry))) return false;
   return Object.entries(data.logs).every(([key, log]) => DATE_PATTERN.test(key) && isValidLog(log));
 }
 
 function logContent(log) {
-  return JSON.stringify({ finished: log.finished, results: log.results });
+  return JSON.stringify({ finished: log.finished, results: log.results, doneOn: log.doneOn });
+}
+
+function measurementContent(entry) {
+  const { updatedAt, ...values } = entry;
+  return JSON.stringify(values);
 }
 
 function compareBackup(data) {
@@ -43,6 +58,11 @@ function compareBackup(data) {
     if (!store.logs[key]) added += 1;
     else if (logContent(store.logs[key]) !== logContent(log)) changed += 1;
   });
+  Object.entries(data.body || {}).forEach(([key, entry]) => {
+    if (!store.body[key]) {
+      if (!entry.deleted) added += 1;
+    } else if (measurementContent(store.body[key]) !== measurementContent(entry)) changed += 1;
+  });
   return { added, changed };
 }
 
@@ -51,6 +71,9 @@ function applyBackup(data) {
   const now = new Date().toISOString();
   Object.entries(data.logs).forEach(([key, log]) => {
     if (!store.logs[key] || logContent(store.logs[key]) !== logContent(log)) store.logs[key] = { ...log, updatedAt: now };
+  });
+  Object.entries(data.body || {}).forEach(([key, entry]) => {
+    if (!store.body[key] || measurementContent(store.body[key]) !== measurementContent(entry)) store.body[key] = { ...entry, updatedAt: now };
   });
   if (data.startDate && (!store.startDate || data.startDate < store.startDate)) store.startDate = data.startDate;
   saveStore();
@@ -120,7 +143,7 @@ function renderDataPanel(message, pending) {
     cancel.type = "button";
     cancel.addEventListener("click", () => renderDataPanel("Імпорт скасовано. Дані не змінено."));
     body.append(
-      el("p", "notice", `Нових днів: ${pending.added}. Днів, які буде замінено даними з файлу: ${pending.changed}.`),
+      el("p", "notice", `Нових записів: ${pending.added}. Записів, які буде замінено даними з файлу: ${pending.changed}.`),
       el("div", "data-actions", confirm, cancel),
     );
   } else {

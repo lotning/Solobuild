@@ -108,6 +108,11 @@ function computeGame(store) {
   const recordNames = {};
   const days = {};
   const unlocked = {};
+  const history = {};
+  const addHistory = (id, key, value, exercise, level) => {
+    if (!history[id]) history[id] = [];
+    history[id].push({ key, value, name: exercise.name, weight: exercise.weight, unit: exercise.unit, level });
+  };
   const counters = { workouts: 0, perfect: 0, fullWeeks: 0, bestStreak: 0, levelups: 0, records: 0, tests: 0, comebacks: 0, kcal: 0, goals: {}, best: {} };
   let xp = 0;
   let streak = 0;
@@ -131,7 +136,7 @@ function computeGame(store) {
         counters.comebacks += 1;
       }
       counters.workouts += 1;
-      counters.kcal += dayKcal(plan, { states }, log);
+      counters.kcal += dayKcal(plan, { states }, log, bodyWeightOn(key));
       award(plan.isTest ? "Тест пройдено" : "Тренування завершено", XP.workout);
 
       let met = 0;
@@ -149,6 +154,7 @@ function computeGame(store) {
               counters.goals[exercise.id] = true;
             }
             checkRecord(exercise.id, exercise, value);
+            addHistory(exercise.id, key, value, exercise, 0);
             return;
           }
           const current = states[exercise.id];
@@ -160,6 +166,7 @@ function computeGame(store) {
             const top = Math.max(...values);
             checkRecord(`${exercise.id}:${current.level}`, resolveExercise(exercise, current), top);
             counters.best[exercise.id] = Math.max(counters.best[exercise.id] || 0, top);
+            addHistory(exercise.id, key, top, resolveExercise(exercise, current), current.level);
           }
           const { state, status } = advance(exercise, current, results, plan.deload);
           if (status === "levelup") levelups += 1;
@@ -231,6 +238,7 @@ function computeGame(store) {
     unlocked,
     counters,
     kcal: counters.kcal,
+    history,
     records: bestRecords(best, recordNames),
   };
 }

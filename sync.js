@@ -35,17 +35,22 @@ function saveSyncConfig() {
   }
 }
 
-function syncContent(startDate, logs) {
+function sortedByKey(entries) {
   const sorted = {};
-  Object.keys(logs)
+  Object.keys(entries || {})
     .sort()
     .forEach((key) => {
-      sorted[key] = logs[key];
+      sorted[key] = entries[key];
     });
-  return JSON.stringify({ version: 1, startDate, logs: sorted });
+  return sorted;
 }
 
-// Для кожного дня залишається новіша версія. За однакового часу перемагає версія з Gist,
+// Вміст Gist: тренування й заміри тіла.
+function syncContent(data) {
+  return JSON.stringify({ version: 1, startDate: data.startDate, logs: sortedByKey(data.logs), body: sortedByKey(data.body) });
+}
+
+// Для кожного дня (і кожного заміру) залишається новіша версія. За однакового часу перемагає версія з Gist,
 // щоб обидва пристрої зійшлися на одних даних.
 function mergeLogs(local, remote) {
   const merged = { ...local };
@@ -94,9 +99,9 @@ async function createGist() {
   const gist = await githubRequest("/gists", {
     method: "POST",
     body: JSON.stringify({
-      description: "Тренування: синхронізація результатів",
+      description: "Тренування: синхронізація результатів і замірів",
       public: false,
-      files: { [GIST_FILE]: { content: syncContent(store.startDate, store.logs) } },
+      files: { [GIST_FILE]: { content: syncContent(store) } },
     }),
   });
   return gist.id;
@@ -130,16 +135,17 @@ async function readRemote(gistId) {
 }
 
 function applyRemote(remote) {
-  const merged = mergeLogs(store.logs, remote.logs);
-  const startDate = earliestDate(store.startDate, remote.startDate);
-  if (syncContent(startDate, merged) === syncContent(store.startDate, store.logs)) return;
-  store.logs = merged;
-  store.startDate = startDate;
+  const merged = { startDate: earliestDate(store.startDate, remote.startDate), logs: mergeLogs(store.logs, remote.logs), body: mergeLogs(store.body, remote.body || {}) };
+  if (syncContent(merged) === syncContent(store)) return;
+  store.logs = merged.logs;
+  store.body = merged.body;
+  store.startDate = merged.startDate;
   syncApplying = true;
   saveStore();
   syncApplying = false;
   const active = document.activeElement;
-  if (!(active && active.closest && active.closest(".set"))) render();
+  // Не перемальовуємо, поки людина вводить результат або працює секундомір.
+  if (!(active && active.closest && active.closest(".set")) && !(typeof stopwatch !== "undefined" && stopwatch)) render();
 }
 
 function syncErrorMessage(error) {
@@ -169,8 +175,8 @@ async function runSync() {
     }
     const remote = await readRemote(syncConfig.gistId);
     applyRemote(remote);
-    const content = syncContent(store.startDate, store.logs);
-    if (content !== syncContent(remote.startDate, remote.logs)) {
+    const content = syncContent(store);
+    if (content !== syncContent(remote)) {
       await githubRequest(`/gists/${syncConfig.gistId}`, {
         method: "PATCH",
         body: JSON.stringify({ files: { [GIST_FILE]: { content } } }),

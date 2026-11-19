@@ -17,11 +17,11 @@ const store = loadStore();
 function loadStore() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved && saved.logs) return saved;
+    if (saved && saved.logs) return { ...saved, body: saved.body || {} };
   } catch (error) {
     storageFailed = true;
   }
-  return { version: 1, startDate: null, logs: {} };
+  return { version: 1, startDate: null, logs: {}, body: {} };
 }
 
 function saveStore() {
@@ -83,6 +83,62 @@ function detailsText(exercise) {
   return parts.join(" · ");
 }
 
+// Тренування, яке виконується саме зараз: сьогоднішнє або пропущене, яке надолужують сьогодні.
+function isLiveSession(key) {
+  const log = store.logs[key];
+  return key === todayKey || Boolean(log && log.doneOn === todayKey);
+}
+
+function openDay(key) {
+  weekOffset = Math.round(daysBetween(mondayKey(todayKey), mondayKey(key)) / 7);
+  selectedIndex = weekdayIndex(key);
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+// Надолужити пропущене: результати зберігаються за днем за планом, а doneOn — коли зроблено насправді.
+function startMakeup(key) {
+  if (!store.startDate) store.startDate = mondayKey(todayKey);
+  const log = store.logs[key] || { finished: false, results: {} };
+  store.logs[key] = { ...log, doneOn: todayKey, updatedAt: new Date().toISOString() };
+  saveStore();
+  openDay(key);
+}
+
+function cancelMakeup(key) {
+  const { doneOn, ...log } = store.logs[key];
+  store.logs[key] = { ...log, updatedAt: new Date().toISOString() };
+  saveStore();
+  render();
+}
+
+function renderMakeupNotice(key) {
+  const log = store.logs[key];
+  const weekday = WEEKDAYS_ACCUSATIVE[weekdayIndex(key)];
+  if (log && log.doneOn && log.doneOn !== key) {
+    if (log.doneOn !== todayKey) return el("p", "notice", `Це тренування надолужено ${formatDay(log.doneOn)}.`);
+    const notice = el("div", "notice makeup-notice", el("p", null, `Надолужуєте сьогодні: тренування зарахується за ${weekday}, а відновлення м'язів рахуватиметься від сьогодні.`));
+    if (!log.finished) {
+      const cancel = el("button", "plain", "Скасувати");
+      cancel.type = "button";
+      cancel.addEventListener("click", () => cancelMakeup(key));
+      notice.append(cancel);
+    }
+    return notice;
+  }
+  const missed = key < todayKey && key >= mondayKey(todayKey) && !(log && log.finished) && !hasAnyResult(key);
+  if (!missed) return null;
+  const start = el("button", "fill", "Зробити сьогодні");
+  start.type = "button";
+  start.addEventListener("click", () => startMakeup(key));
+  return el(
+    "div",
+    "notice makeup-notice",
+    el("p", null, `Пропустили це тренування? Його можна зробити сьогодні — воно зарахується за ${weekday}. Якщо ви тренувалися того дня й просто не записали, вводьте результати нижче.`),
+    start,
+  );
+}
+
 function setResult(key, id, index, raw) {
   if (!store.startDate) store.startDate = mondayKey(todayKey);
   if (!store.logs[key]) store.logs[key] = { finished: false, results: {} };
@@ -92,6 +148,7 @@ function setResult(key, id, index, raw) {
   log.results[id][index] = Number.isNaN(parsed) ? null : Math.min(9999, Math.max(0, parsed));
   log.updatedAt = new Date().toISOString();
   saveStore();
+  if (typeof setTrainingAwake === "function") setTrainingAwake(isLiveSession(key) && !log.finished);
   if (log.finished) {
     refreshSummary(key);
     if (typeof renderGamePanel === "function") renderGamePanel();
@@ -119,6 +176,7 @@ function setInputs(exercise, sets, key, context) {
     input.addEventListener("input", () => {
       setResult(key, exercise.id, index, input.value);
       updateButtons();
+      if (context.live && typeof onSetEntered === "function") onSetEntered(input, context, context.last);
     });
     inputs.push(input);
     row.append(el("label", "set", el("span", "set-label", sets === 1 ? "Результат" : `${index + 1}`), input));
@@ -157,14 +215,28 @@ function setInputs(exercise, sets, key, context) {
     clear.hidden = inputs.every((input) => input.value === "");
   }
   updateButtons();
-  return el("div", "sets-wrap", row, fill, clear);
+  const stopwatchButton =
+    context.live && exercise.unit && typeof renderStopwatchButton === "function"
+      ? renderStopwatchButton(
+          exercise,
+          (seconds) => {
+            const input = inputs.find((item) => item.value === "") || inputs[inputs.length - 1];
+            input.value = String(seconds);
+            setResult(key, exercise.id, inputs.indexOf(input), input.value);
+            updateButtons();
+          },
+          context,
+          context.last,
+        )
+      : null;
+  return el("div", "sets-wrap", row, stopwatchButton, fill, clear);
 }
 
 function renderExercise(exercise, sets, key, context) {
   const details = context.isTest ? testDetails(exercise, context.progress) : detailsText(exercise);
   const last = context.progress.lastResults[exercise.id];
   const lastText = last && !context.isTest ? `Минулого разу: ${last.map((value) => value ?? "—").join(", ")}` : null;
-  const kcal = context.isTest ? 0 : exerciseKcal(exercise, sets, null, context.circuit);
+  const kcal = context.isTest ? 0 : exerciseKcal(exercise, sets, null, context.circuit, bodyWeightOn(key));
   const kcalLabel = context.circuit ? "за всі кола" : "разом із відпочинком";
   return el(
     "li",
@@ -275,7 +347,7 @@ function buildSummary(key) {
     el("h2", "summary-title", plan.isTest ? "Результати тесту збережено" : "Тренування збережено"),
     el("p", "summary-note", plan.isTest ? "Тест не змінює цілі тренувань." : "Цілі на наступні тренування:"),
     el("ul", "summary-list", ...rows),
-    el("p", "summary-calories", `Орієнтовно витрачено: ${kcalText(dayKcal(plan, progress, log), 10)}`),
+    el("p", "summary-calories", `Орієнтовно витрачено: ${kcalText(dayKcal(plan, progress, log, bodyWeightOn(key)), 10)}`),
     typeof renderDayRewards === "function" ? renderDayRewards(key) : null,
   );
   summary.id = "summary-card";
@@ -372,6 +444,7 @@ function renderFinish(key) {
       hint.textContent = "Введіть хоча б один результат.";
       return;
     }
+    if (typeof stopRest === "function") stopRest();
     store.logs[key].finished = true;
     store.logs[key].updatedAt = new Date().toISOString();
     saveStore();
@@ -382,8 +455,8 @@ function renderFinish(key) {
   return wrap;
 }
 
-function renderCalories(plan, progress) {
-  const title = plan.isTest ? "Калорії: залежать від результату тесту" : `Калорії за план: ${kcalText(dayKcal(plan, progress), 10)}`;
+function renderCalories(plan, progress, key) {
+  const title = plan.isTest ? "Калорії: залежать від результату тесту" : `Калорії за план: ${kcalText(dayKcal(plan, progress, null, bodyWeightOn(key)), 10)}`;
   return el(
     "details",
     "phase",
@@ -391,7 +464,7 @@ function renderCalories(plan, progress) {
     el(
       "p",
       "calories-note",
-      `Це груба оцінка для ваги ${BODY_WEIGHT_KG} кг, а реальна витрата може відрізнятися на третину й більше. У неї входять розминка, розтяжка, відпочинок і базовий обмін, тому число завжди більше за «чисті» витрати на вправи. Не варто точно підганяти під нього харчування.`,
+      `Це груба оцінка для ваги ${formatDecimal(bodyWeightOn(key))} кг${hasBodyWeight() ? "" : " (додайте свій замір у розділі «Прогрес і тіло»)"}, а реальна витрата може відрізнятися на третину й більше. У неї входять розминка, розтяжка, відпочинок і базовий обмін, тому число завжди більше за «чисті» витрати на вправи. Не варто точно підганяти під нього харчування.`,
     ),
   );
 }
@@ -401,19 +474,21 @@ function renderTraining(key, plan) {
   const canLog = key <= todayKey;
   const main = document.createDocumentFragment();
 
+  const makeup = renderMakeupNotice(key);
+  if (makeup) main.append(makeup);
   if (plan.deload) main.append(el("p", "notice", "Легкий тиждень: підходів на третину менше, а цілі не змінюються."));
   if (progress.breakApplied) main.append(el("p", "notice", "Після перерви понад 7 днів цілі знижено приблизно на 15%."));
-  main.append(renderCalories(plan, progress));
+  main.append(renderCalories(plan, progress, key));
   main.append(renderSteps("Розминка · 10 хв", plan.day.warmup));
 
   plan.day.blocks.forEach((block) => {
     const sets = block.circuit ? plannedSets(block.exercises[0], plan.deload) : null;
     const section = el("section", "block", el("h2", "block-title", block.circuit ? `${sets} кола` : block.title));
     section.append(el("p", "block-note", block.note || REST_NOTE));
-    const context = { circuit: Boolean(block.circuit), isTest: plan.isTest, canLog, progress };
-    const items = block.exercises.map((exercise) => {
+    const context = { circuit: Boolean(block.circuit), isTest: plan.isTest, canLog, progress, live: isLiveSession(key) };
+    const items = block.exercises.map((exercise, index) => {
       const resolved = plan.isTest ? { ...exercise } : resolveExercise(exercise, progress.states[exercise.id]);
-      return renderExercise(resolved, plannedSets(exercise, plan.deload), key, context);
+      return renderExercise(resolved, plannedSets(exercise, plan.deload), key, { ...context, last: index === block.exercises.length - 1 });
     });
     section.append(el("ul", "exercises", ...items));
     main.append(section);
@@ -514,9 +589,13 @@ function render() {
   document.getElementById("back-today").hidden = isToday;
   document.getElementById("storage-warning").hidden = !storageFailed;
 
+  if (typeof cancelStopwatch === "function") cancelStopwatch();
   const content = document.getElementById("content");
   content.replaceChildren(plan.day ? renderTraining(key, plan) : renderRecovery(selectedIndex));
+  const log = store.logs[key];
+  if (typeof setTrainingAwake === "function") setTrainingAwake(Boolean(plan.day) && isLiveSession(key) && hasAnyResult(key) && !(log && log.finished));
   if (typeof renderGamePanel === "function") renderGamePanel();
+  if (typeof renderProgressPanel === "function") renderProgressPanel();
   if (typeof renderDataPanel === "function") renderDataPanel();
 }
 

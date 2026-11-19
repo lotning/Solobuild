@@ -2,7 +2,6 @@
 // Значення MET орієнтуються на Compendium of Physical Activities і спрощені для цієї програми.
 // Оцінка включає базовий обмін, але не враховує техніку, темп і вагу гантелі точно.
 
-const BODY_WEIGHT_KG = 90;
 const REST_MET = 1.5;
 const WARMUP_KCAL_MINUTES = 10;
 const WARMUP_MET = 3.5;
@@ -44,8 +43,9 @@ const CALORIE_RATES = {
   test_plank: { met: 4 },
 };
 
-function kcalPerMinute(met) {
-  return (met * 3.5 * BODY_WEIGHT_KG) / 200;
+// weight — вага на дату тренування з body.js; без неї береться актуальна.
+function kcalPerMinute(met, weight = bodyWeightOn(todayKey)) {
+  return (met * 3.5 * weight) / 200;
 }
 
 function performedValues(results, sets) {
@@ -53,7 +53,7 @@ function performedValues(results, sets) {
 }
 
 // Калорії однієї вправи. Без results рахується план, а з results — лише виконані підходи.
-function exerciseKcal(exercise, sets, results, circuit) {
+function exerciseKcal(exercise, sets, results, circuit, weight = bodyWeightOn(todayKey)) {
   const rate = CALORIE_RATES[exercise.id];
   if (!rate) return 0;
   const values = results ? performedValues(results, sets) : Array(sets).fill(exercise.target);
@@ -62,12 +62,12 @@ function exerciseKcal(exercise, sets, results, circuit) {
   const sides = exercise.side ? 2 : 1;
   const workSeconds = values.reduce((sum, value) => sum + value, 0) * secondsPerUnit * sides;
   const restSeconds = circuit ? 0 : (values.length - 1) * SET_REST_SECONDS;
-  return (workSeconds / 60) * kcalPerMinute(rate.met) + (restSeconds / 60) * kcalPerMinute(REST_MET);
+  return (workSeconds / 60) * kcalPerMinute(rate.met, weight) + (restSeconds / 60) * kcalPerMinute(REST_MET, weight);
 }
 
 // Калорії всього дня разом із розминкою й розтяжкою. Якщо передано log, рахуються фактичні результати.
-function dayKcal(plan, progress, log) {
-  let total = WARMUP_KCAL_MINUTES * kcalPerMinute(WARMUP_MET) + COOLDOWN_KCAL_MINUTES * kcalPerMinute(COOLDOWN_MET);
+function dayKcal(plan, progress, log, weight = bodyWeightOn(todayKey)) {
+  let total = WARMUP_KCAL_MINUTES * kcalPerMinute(WARMUP_MET, weight) + COOLDOWN_KCAL_MINUTES * kcalPerMinute(COOLDOWN_MET, weight);
   plan.day.blocks.forEach((block) => {
     let doneExercises = 0;
     let rounds = 0;
@@ -75,13 +75,13 @@ function dayKcal(plan, progress, log) {
       const sets = plannedSets(exercise, plan.deload);
       const resolved = plan.isTest ? exercise : resolveExercise(exercise, progress.states[exercise.id]);
       const results = log ? log.results[exercise.id] || [] : null;
-      const kcal = exerciseKcal(resolved, sets, results, Boolean(block.circuit));
+      const kcal = exerciseKcal(resolved, sets, results, Boolean(block.circuit), weight);
       total += kcal;
       if (kcal > 0) doneExercises += 1;
       rounds = Math.max(rounds, results ? performedValues(results, sets).length : sets);
     });
-    if (block.circuit) total += (Math.max(rounds - 1, 0) * ROUND_REST_SECONDS * kcalPerMinute(REST_MET)) / 60;
-    if (plan.isTest) total += (Math.max(doneExercises - 1, 0) * TEST_REST_SECONDS * kcalPerMinute(REST_MET)) / 60;
+    if (block.circuit) total += (Math.max(rounds - 1, 0) * ROUND_REST_SECONDS * kcalPerMinute(REST_MET, weight)) / 60;
+    if (plan.isTest) total += (Math.max(doneExercises - 1, 0) * TEST_REST_SECONDS * kcalPerMinute(REST_MET, weight)) / 60;
   });
   return total;
 }

@@ -26,24 +26,43 @@ function isFinishedDay(store, key) {
   return Boolean(log && log.finished && Object.values(log.results).some((values) => values.some((value) => value !== null && value !== undefined)));
 }
 
-// Останнє навантаження кожної групи до дати key (не включно).
+// Коли тренування насправді виконали: надолужене пізніше зберігає дату в doneOn.
+function doneDate(store, planKey) {
+  return (store.logs[planKey] && store.logs[planKey].doneOn) || planKey;
+}
+
+// Тренування, від яких рахується відновлення до дати key (не включно): завершені — за фактичною датою,
+// а для майбутніх дат ще й заплановані між сьогодні й key.
+function recoverySessions(store, key) {
+  const from = shiftKey(key, -RECOVERY_LOOKBACK_DAYS);
+  const sessions = [];
+  Object.keys(store.logs).forEach((planKey) => {
+    if (!isFinishedDay(store, planKey)) return;
+    const doneKey = doneDate(store, planKey);
+    if (doneKey >= from && doneKey < key) sessions.push({ planKey, doneKey, planned: false });
+  });
+  for (let dayKey = todayKey > from ? todayKey : from; dayKey < key; dayKey = shiftKey(dayKey, 1)) {
+    const log = store.logs[dayKey];
+    if (planFor(dayKey, store.startDate).day && !isFinishedDay(store, dayKey) && !(log && log.doneOn)) sessions.push({ planKey: dayKey, doneKey: dayKey, planned: true });
+  }
+  return sessions.sort((a, b) => (a.doneKey < b.doneKey ? -1 : a.doneKey > b.doneKey ? 1 : 0));
+}
+
+// Останнє навантаження кожної групи до дати key.
 function muscleLoads(store, key) {
   const loads = {};
-  for (let offset = RECOVERY_LOOKBACK_DAYS; offset >= 1; offset -= 1) {
-    const dayKey = shiftKey(key, -offset);
-    const plan = planFor(dayKey, store.startDate);
-    if (!plan.day || !plan.day.muscles) continue;
-    const finished = isFinishedDay(store, dayKey);
-    const planned = !finished && dayKey >= todayKey;
-    if (!finished && !planned) continue;
+  recoverySessions(store, key).forEach(({ planKey, doneKey, planned }) => {
+    const plan = planFor(planKey, store.startDate);
+    if (!plan.day || !plan.day.muscles) return;
+    const offset = daysBetween(doneKey, key);
     Object.entries(plan.day.muscles).forEach(([group, share]) => {
       const intensity = share * (plan.deload ? DELOAD_INTENSITY : 1);
       const window = Math.max(24, MUSCLE_GROUPS[group].hours * intensity);
       const end = window - offset * 24;
       // Легке навантаження не «скасовує» важче, якщо після важкого відновлення триває довше.
-      if (!loads[group] || end >= loads[group].end) loads[group] = { key: dayKey, title: plan.day.title, intensity, window, end, planned };
+      if (!loads[group] || end >= loads[group].end) loads[group] = { key: doneKey, title: plan.day.title, intensity, window, end, planned };
     });
-  }
+  });
   return loads;
 }
 
@@ -56,9 +75,57 @@ function muscleStatus(group, load, atKey) {
 
 function lastTrainingBefore(store, key) {
   return Object.keys(store.logs)
-    .filter((dayKey) => dayKey < key && isFinishedDay(store, dayKey))
+    .filter((dayKey) => isFinishedDay(store, dayKey))
+    .map((dayKey) => doneDate(store, dayKey))
+    .filter((doneKey) => doneKey < key)
     .sort()
     .pop();
+}
+
+// Тренування цього тижня до сьогодні, які ще не виконано й не взято надолужувати.
+function missedThisWeek(store) {
+  const missed = [];
+  for (let dayKey = mondayKey(todayKey); dayKey < todayKey; dayKey = shiftKey(dayKey, 1)) {
+    const plan = planFor(dayKey, store.startDate);
+    const log = store.logs[dayKey];
+    if (plan.day && !isFinishedDay(store, dayKey) && !(log && log.doneOn)) missed.push({ key: dayKey, plan });
+  }
+  return missed;
+}
+
+function madeUpOn(store, key) {
+  return Object.keys(store.logs).filter((planKey) => planKey !== key && store.logs[planKey].doneOn === key);
+}
+
+// Сьогоднішній день відновлення: можна надолужити пропущене тренування цього тижня.
+function renderMakeup(store, key) {
+  if (key !== todayKey) return null;
+  const done = madeUpOn(store, key);
+  const missed = store.startDate ? missedThisWeek(store) : [];
+  if (!done.length && !missed.length) return null;
+  const items = [
+    ...done.map((planKey) => {
+      const plan = planFor(planKey, store.startDate);
+      const open = el("button", "plain", isFinishedDay(store, planKey) ? "Переглянути" : "Продовжити");
+      open.type = "button";
+      open.addEventListener("click", () => openDay(planKey));
+      const state = isFinishedDay(store, planKey) ? "надолужено сьогодні" : "у процесі";
+      return el("li", "makeup-item", el("span", null, el("strong", null, plan.day.title), ` · ${WEEKDAYS[weekdayIndex(planKey)]}, ${state}`), open);
+    }),
+    ...missed.map(({ key: planKey, plan }) => {
+      const start = el("button", "fill", "Зробити сьогодні");
+      start.type = "button";
+      start.addEventListener("click", () => startMakeup(planKey));
+      return el("li", "makeup-item", el("span", null, el("strong", null, plan.day.title), ` · пропущено в ${WEEKDAYS_ACCUSATIVE[weekdayIndex(planKey)]}`), start);
+    }),
+  ];
+  return el(
+    "section",
+    "makeup",
+    el("h2", "recovery-name", missed.length ? "Пропущене цього тижня" : "Надолужене сьогодні"),
+    missed.length ? el("p", "block-note", "Тренування зарахується за свій день, тож цілі, серія тижнів і досягнення не постраждають. Відновлення м'язів рахуватиметься від сьогодні.") : null,
+    el("ul", "makeup-list", ...items),
+  );
 }
 
 function nextTrainingAfter(store, key) {
@@ -190,10 +257,15 @@ function renderRecoveryDay(key, index) {
       ? `Сьогодні без тренування. Найбільше зараз відновлюються: ${groupNames(recovering.slice(0, 3))}.`
       : "Сьогодні без тренування. Усі м'язи вже відновлені — день для спокійного руху й сил на наступний тиждень.";
   main.append(el("p", "intro", intro));
+  const makeup = renderMakeup(store, key);
+  if (makeup) main.append(makeup);
   if (hasHistory) main.append(renderMuscleStatus(statuses, key));
 
   const advice = recoveryAdvice(store, key, hasHistory ? statuses : statuses.map((status) => muscleStatus(status.group, null, key)));
-  main.append(el("ul", "recovery", ...[...advice, ...RECOVERY.items].map((item) => el("li", "recovery-item", el("h2", "recovery-name", item.name), el("p", null, item.text)))));
+  const weighIn = weighInAdvice(key);
+  if (weighIn) advice.push(weighIn);
+  const general = RECOVERY.items.map((item) => (item.name === "Білок" ? { ...item, text: proteinText(key) } : item));
+  main.append(el("ul", "recovery", ...[...advice, ...general].map((item) => el("li", "recovery-item", el("h2", "recovery-name", item.name), el("p", null, item.text)))));
 
   const stretches = hasHistory ? recoveryStretches(statuses) : [];
   if (stretches.length) main.append(renderSteps("Легка розтяжка для м'язів, що відновлюються · 10 хв", stretches));
