@@ -226,6 +226,24 @@ const SCHEDULE_HISTORY = [
 ];
 const CURRENT_TEST_WEEKDAY = 3;
 
+// З 23.11.2026: вакуум переходить з вівторка в кінець кожного тренування разом із «мертвим жуком».
+// Тиждень 16–22.11 лишається в історії зі старим вівторком.
+SCHEDULE_HISTORY.push({ until: "2026-11-23", testWeekday: 3, days: { ...TRAINING_DAYS } });
+const CORE_BLOCK = {
+  title: "Кор наприкінці",
+  exercises: [
+    { id: "core_bug", guide: "dead_bug", name: "«Мертвий жук»", side: "бік", sets: 2, target: 8, max: 12, levels: harderLevels("«Мертвий жук»"), cue: "Поперек увесь час притиснутий до підлоги. Опускайте руку й протилежну ногу повільно." },
+    { id: "tue_vacuum", guide: "vacuum", name: "Вакуум на колінах", sets: 3, target: 15, max: 30, unit: "с", cue: "Повний видих, затягніть живіт під ребра й тримайте без вдиху." },
+  ],
+};
+Object.keys(TRAINING_DAYS).forEach((index) => {
+  const day = TRAINING_DAYS[index];
+  TRAINING_DAYS[index] = {
+    ...day,
+    blocks: [...day.blocks.map((block) => ({ ...block, exercises: block.exercises.filter((exercise) => exercise.id !== "tue_vacuum") })), CORE_BLOCK],
+  };
+});
+
 // Розклад, що діяв на дату key (рядок РРРР-ММ-ДД).
 function scheduleFor(key) {
   const old = SCHEDULE_HISTORY.find((entry) => key < entry.until);
