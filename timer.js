@@ -150,7 +150,7 @@ function renderRestBar() {
 function restAfter(context, exerciseIsLast) {
   if (context.isTest) return { seconds: TEST_REST_SECONDS, label: "Відпочинок перед наступною вправою" };
   if (context.circuit) return exerciseIsLast ? { seconds: ROUND_REST_SECONDS, label: "Відпочинок між колами" } : null;
-  return { seconds: SET_REST_SECONDS, label: "Відпочинок між підходами" };
+  return { seconds: context.rest || SET_REST_SECONDS, label: "Відпочинок між підходами" };
 }
 
 const pendingRest = new WeakMap();

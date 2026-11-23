@@ -491,7 +491,7 @@ function renderTraining(key, plan) {
     const context = { circuit: Boolean(block.circuit), isTest: plan.isTest, canLog, progress, live: isLiveSession(key) };
     const items = block.exercises.map((exercise, index) => {
       const resolved = plan.isTest ? { ...exercise } : resolveExercise(exercise, progress.states[exercise.id]);
-      return renderExercise(resolved, plannedSets(exercise, plan.deload), key, { ...context, last: index === block.exercises.length - 1 });
+      return renderExercise(resolved, plannedSets(exercise, plan.deload), key, { ...context, last: index === block.exercises.length - 1, rest: resolved.rest });
     });
     section.append(el("ul", "exercises", ...items));
     main.append(section);

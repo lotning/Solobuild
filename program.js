@@ -244,6 +244,33 @@ Object.keys(TRAINING_DAYS).forEach((index) => {
   };
 });
 
+// З 30.11.2026: у понеділок найважчі віджимання першими, жим між віджиманнями, звичайних віджимань 3 підходи
+// і довший відпочинок, щоб трицепс не «здувався» до кінця вправ.
+SCHEDULE_HISTORY.push({ until: "2026-11-30", testWeekday: 3, days: { ...TRAINING_DAYS } });
+{
+  const monday = TRAINING_DAYS[0];
+  const main = monday.blocks[0].exercises;
+  const byId = (id) => main.find((exercise) => exercise.id === id);
+  const PUSH_REST = 150;
+  TRAINING_DAYS[0] = {
+    ...monday,
+    blocks: [
+      {
+        ...monday.blocks[0],
+        note: "Відпочинок між підходами віджимань: 2–3 хв, щоб трицепс встигав відновитися.",
+        exercises: [
+          { ...byId("mon_decline"), rest: PUSH_REST },
+          byId("mon_press"),
+          { ...byId("mon_pushup"), sets: 3, rest: PUSH_REST },
+          { ...byId("mon_narrow"), rest: PUSH_REST },
+          byId("mon_plank"),
+        ],
+      },
+      ...monday.blocks.slice(1),
+    ],
+  };
+}
+
 // Розклад, що діяв на дату key (рядок РРРР-ММ-ДД).
 function scheduleFor(key) {
   const old = SCHEDULE_HISTORY.find((entry) => key < entry.until);
