@@ -271,6 +271,20 @@ SCHEDULE_HISTORY.push({ until: "2026-11-30", testWeekday: 3, days: { ...TRAINING
   };
 }
 
+// З 30.11.2026: тяга й пуловер з 15 кг стали легкими (вдвічі більше за ціль два тижні поспіль),
+// а важчої гантелі нема — тож повільний темп. Нові id, щоб ціль почалася з 10, а не зі старих 13.
+{
+  const pull = TRAINING_DAYS[2];
+  const tempo = {
+    thu_row: { id: "wed_row_tempo", guide: "row", name: "Тяга гантелі в нахилі, повільно", weight: "15 кг", side: "рука", sets: 4, target: 10, max: 15, repExtra: 4, levels: [{}, { name: "Тяга гантелі в нахилі, пауза 2 с угорі", repExtra: 5 }], cue: "Вгору за 1 с, пауза 1 с з ліктем біля стегна, опускання за 3 с." },
+    thu_pullover: { id: "wed_pullover_tempo", guide: "pullover", name: "Пуловер лежачи, повільно", weight: "15 кг", sets: 3, target: 10, max: 15, repExtra: 4, levels: [{}, { name: "Пуловер лежачи, пауза 2 с за головою", repExtra: 5 }], cue: "Опускання за 3–4 с, пауза 1 с у розтягнутому положенні за головою, вгору спокійно." },
+  };
+  TRAINING_DAYS[2] = {
+    ...pull,
+    blocks: pull.blocks.map((block) => ({ ...block, exercises: block.exercises.map((exercise) => tempo[exercise.id] || exercise) })),
+  };
+}
+
 // Розклад, що діяв на дату key (рядок РРРР-ММ-ДД).
 function scheduleFor(key) {
   const old = SCHEDULE_HISTORY.find((entry) => key < entry.until);
