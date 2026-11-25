@@ -837,6 +837,25 @@ summary:focus-visible {
   color: var(--muted);
 }
 
+.badge-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.badge-bar {
+  flex: 1;
+  height: 6px;
+}
+
+.badge-count {
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 .game-total {
   font-weight: 600;
 }

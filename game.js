@@ -18,12 +18,12 @@ const TRAINING_INDEXES = Object.keys(TRAINING_DAYS).map(Number);
 
 // lore — коротка «ігрова» репліка, яку видно після отримання досягнення.
 function countAchievement(id, title, text, key, count, lore) {
-  return { id, title, text, lore, test: (c) => c[key] >= count };
+  return { id, title, text, lore, test: (c) => c[key] >= count, progress: (c) => [c[key], count] };
 }
 
 // Найкращий підхід у вправі на будь-якому варіанті складності.
 function bestAchievement(id, exerciseId, value, title, text, lore) {
-  return { id, title, text, lore, test: (c) => (c.best[exerciseId] || 0) >= value };
+  return { id, title, text, lore, test: (c) => (c.best[exerciseId] || 0) >= value, progress: (c) => [c.best[exerciseId] || 0, value] };
 }
 
 function kcalAchievement(id, kcal, title, lore) {
@@ -62,6 +62,7 @@ const ACHIEVEMENTS = [
       text: `${exercise.goal}${exercise.unit ? ` ${exercise.unit}` : ""} в одному підході під час тесту.`,
       lore: TEST_GOAL_LORE[exercise.id],
       test: (c) => Boolean(c.goals[exercise.id]),
+      progress: (c) => [c.best[exercise.id] || 0, exercise.goal],
     })),
   kcalAchievement("kcal_1000", 1000, "Піца, якої не було", "Ціла піца перетворилася на рух. Вона прожила недарма."),
   kcalAchievement("kcal_7700", 7700, "Мінус кілограм", "Приблизно стільки енергії в кілограмі жиру. Принаймні на папері."),
@@ -69,6 +70,23 @@ const ACHIEVEMENTS = [
   kcalAchievement("kcal_50000", 50000, "Доменна піч", "Від тебе можна грітися взимку. Сусіди вже питають тариф."),
   countAchievement("comeback", "Повернення", "Поверніться до тренувань після перерви понад 7 днів.", "comebacks", 1, "Повернутися важче, ніж почати. І все ж ти тут."),
 ];
+
+// Шкала прогресу для ще не отриманого досягнення. Для одноразових цілей («зробіть один раз») її не показуємо.
+function badgeProgress(achievement, counters) {
+  if (!achievement.progress) return null;
+  const [rawValue, goal] = achievement.progress(counters);
+  if (!(goal > 1)) return null;
+  const value = Math.min(Math.round(rawValue || 0), goal);
+  const bar = el("span", "game-bar badge-bar", el("span", "game-bar-fill"));
+  bar.firstChild.style.width = `${Math.round((value / goal) * 100)}%`;
+  bar.setAttribute("role", "progressbar");
+  bar.setAttribute("aria-label", `Прогрес: ${achievement.title}`);
+  bar.setAttribute("aria-valuemin", "0");
+  bar.setAttribute("aria-valuemax", String(goal));
+  bar.setAttribute("aria-valuenow", String(value));
+  const format = (number) => number.toLocaleString("uk-UA");
+  return el("span", "badge-progress", bar, el("span", "badge-count", `${format(value)} / ${format(goal)}`));
+}
 
 // Скільки досвіду потрібно для рівня: 1 — 0, 2 — 200, 3 — 600, 4 — 1200…
 function levelThreshold(level) {
@@ -154,6 +172,7 @@ function computeGame(store) {
               counters.goals[exercise.id] = true;
             }
             checkRecord(exercise.id, exercise, value);
+            counters.best[exercise.id] = Math.max(counters.best[exercise.id] || 0, value);
             addHistory(exercise.id, key, value, exercise, 0);
             return;
           }
@@ -307,7 +326,7 @@ function renderGamePanel() {
           el("strong", "badge-title", achievement.title),
           el("span", "badge-note", achievement.text),
           date && achievement.lore ? el("span", "badge-lore", achievement.lore) : null,
-          date ? el("span", "badge-date", `Отримано ${formatDay(date)}`) : null,
+          date ? el("span", "badge-date", `Отримано ${formatDay(date)}`) : badgeProgress(achievement, game.counters),
         ),
       );
     }),
