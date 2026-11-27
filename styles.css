@@ -1,27 +1,17 @@
 :root {
-  color-scheme: light;
-  --bg: #f4f3ee;
-  --surface: #ffffff;
-  --text: #1e2420;
-  --muted: #5d665f;
-  --line: #dcded6;
-  --accent: #1f6f50;
-  --accent-text: #ffffff;
-  --accent-soft: #e0efe7;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --bg: #141815;
-    --surface: #1e2420;
-    --text: #eef1ec;
-    --muted: #a5aea7;
-    --line: #333b35;
-    --accent: #6fcfa3;
-    --accent-text: #0f1f18;
-    --accent-soft: #223a2e;
-  }
+  color-scheme: dark;
+  --bg: #0d0b1e;
+  --surface: #16132e;
+  --text: #ece8ff;
+  --muted: #9a94c4;
+  --line: #2f2958;
+  --accent: #2de2e6;
+  --accent-text: #0d0b1e;
+  --accent-soft: rgba(45, 226, 230, 0.12);
+  --signal: #f9e900;
+  --signal-text: #0d0b1e;
+  --magenta: #ff2e88;
+  --cut: 12px;
 }
 
 * {
@@ -32,7 +22,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", Roboto, system-ui, sans-serif;
+  font-family: "Exo 2", "Segoe UI", Roboto, system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.45;
 }
@@ -1475,4 +1465,214 @@ select.token-input {
 
 .body-section {
   margin-top: 12px;
+}
+
+
+/* ── Кіберпанк ─────────────────────────────────────────────
+   Одна сміливість — заголовок дня з хроматичним зсувом.
+   Решта — стримано: скошений кут замість заокруглень, неон лише там, де щось означає:
+   жовтий — головна дія, бірюзовий — цифри й прогрес, пурпурний — сьогодні й нагороди. */
+
+body {
+  background:
+    linear-gradient(rgba(45, 226, 230, 0.035) 1px, transparent 1px) 0 0 / 100% 28px,
+    radial-gradient(120% 60% at 100% 0%, rgba(255, 46, 136, 0.12), transparent 60%),
+    radial-gradient(90% 50% at 0% 100%, rgba(45, 226, 230, 0.08), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+.title {
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  text-shadow: -2px 0 rgba(255, 46, 136, 0.75), 2px 0 rgba(45, 226, 230, 0.75);
+}
+
+.block-title {
+  font-weight: 700;
+  color: var(--text);
+  padding-left: 10px;
+  border-left: 3px solid var(--magenta);
+}
+
+/* Скошений правий верхній кут — спільна форма для карток. */
+.exercise,
+.summary-card,
+.phase,
+.recovery-item,
+.data-panel,
+.game-summary,
+.badge,
+.howto,
+.tip,
+.notice,
+.makeup-item,
+.muscle,
+.chart,
+.rest-timer,
+.stopwatch {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+
+.exercise {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%), var(--surface);
+  border-color: var(--line);
+}
+
+.exercise-target {
+  color: var(--accent);
+  font-weight: 800;
+  text-shadow: 0 0 12px rgba(45, 226, 230, 0.45);
+}
+
+.day {
+  border-radius: 0;
+}
+
+.day.is-today {
+  border-color: var(--magenta);
+  box-shadow: inset 0 0 0 1px var(--magenta), 0 0 12px rgba(255, 46, 136, 0.35);
+}
+
+.day.is-selected {
+  background: var(--accent);
+  color: var(--accent-text);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+
+.day-mark.is-training {
+  background: var(--magenta);
+  border-radius: 0;
+  transform: rotate(45deg);
+}
+
+.day.is-selected .day-mark.is-training {
+  background: var(--accent-text);
+}
+
+.set input {
+  background: rgba(13, 11, 30, 0.7);
+  border-color: var(--line);
+  border-radius: 0;
+  font-weight: 700;
+  caret-color: var(--signal);
+}
+
+.set input:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.set input:not(:placeholder-shown) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Головні дії — сигнальний жовтий. */
+.finish-button,
+.fill {
+  background: var(--signal);
+  color: var(--signal-text);
+  border-radius: 0;
+  font-weight: 800;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+.finish-button:hover,
+.fill:hover {
+  filter: brightness(1.08);
+}
+
+.back-today,
+.plain,
+.rest-button,
+.week-arrow,
+.segment {
+  border-radius: 0;
+}
+
+.back-today {
+  background: transparent;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.summary-card {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.game-bar,
+.game-bar-fill,
+.rest-progress,
+.rest-progress-fill {
+  border-radius: 0;
+}
+
+.game-bar-fill,
+.rest-progress-fill {
+  background: linear-gradient(90deg, var(--magenta), var(--accent));
+  box-shadow: 0 0 10px rgba(45, 226, 230, 0.5);
+}
+
+.badge.is-unlocked {
+  background: linear-gradient(135deg, rgba(255, 46, 136, 0.16), rgba(45, 226, 230, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(255, 46, 136, 0.45);
+}
+
+.badge-mark {
+  border-radius: 0;
+}
+
+.badge.is-unlocked .badge-mark {
+  background: var(--magenta);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 46, 136, 0.6);
+}
+
+.rest-timer {
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--accent), 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.rest-clock,
+.stopwatch-clock {
+  color: var(--signal);
+  text-shadow: 0 0 14px rgba(249, 233, 0, 0.45);
+}
+
+.howto-figure {
+  background:
+    linear-gradient(rgba(45, 226, 230, 0.06) 1px, transparent 1px) 0 0 / 100% 12px,
+    rgba(13, 11, 30, 0.6);
+}
+
+a {
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .title {
+    animation: glitch 6s steps(1) infinite;
+  }
+}
+
+@keyframes glitch {
+  0%, 96%, 100% {
+    text-shadow: -2px 0 rgba(255, 46, 136, 0.75), 2px 0 rgba(45, 226, 230, 0.75);
+  }
+  97% {
+    text-shadow: -5px 1px rgba(255, 46, 136, 0.9), 4px -1px rgba(45, 226, 230, 0.9);
+  }
+  98% {
+    text-shadow: 3px 0 rgba(255, 46, 136, 0.9), -3px 0 rgba(45, 226, 230, 0.9);
+  }
+}
+
+.set input::placeholder {
+  opacity: 0.35;
 }

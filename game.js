@@ -21,9 +21,16 @@ function countAchievement(id, title, text, key, count, lore) {
   return { id, title, text, lore, test: (c) => c[key] >= count, progress: (c) => [c[key], count] };
 }
 
-// Найкращий підхід у вправі на будь-якому варіанті складності.
+// Найкращий підхід у вправі на будь-якому варіанті складності. exerciseId може бути списком — береться найкраще з них.
 function bestAchievement(id, exerciseId, value, title, text, lore) {
-  return { id, title, text, lore, test: (c) => (c.best[exerciseId] || 0) >= value, progress: (c) => [c.best[exerciseId] || 0, value] };
+  const best = (c) => Math.max(0, ...[].concat(exerciseId).map((key) => c.best[key] || 0));
+  return { id, title, text, lore, test: (c) => best(c) >= value, progress: (c) => [best(c), value] };
+}
+
+// Досягнуто певного рівня складності у вправі (0 — базовий варіант).
+function levelAchievement(id, exerciseId, level, title, text, lore) {
+  const reached = (c) => c.levels[exerciseId] || 0;
+  return { id, title, text, lore, test: (c) => reached(c) >= level, progress: (c) => [reached(c), level] };
 }
 
 function kcalAchievement(id, kcal, title, lore) {
@@ -51,8 +58,20 @@ const ACHIEVEMENTS = [
   countAchievement("record", "Рекордсмен", "Поставте перший особистий рекорд.", "records", 1, "Вчорашній ти щойно програв сьогоднішньому."),
   countAchievement("record_50", "Серія рекордів", "Поставте 50 особистих рекордів.", "records", 50, "Рекорди падають так часто, що вже не встигаєш святкувати."),
   bestAchievement("carry", "thu_carry", 60, "Носій", "Пройдіть 60 с із гантеллю в одній руці.", "Тепер можна носити кохану людину на руках — і не лише через поріг."),
-  bestAchievement("grip", "thu_grip", 25, "Залізна хватка", "25 стискань еспандера в одному підході.", "Банки з огірками більше не мають шансів. Тепер тебе кличуть відкривати все в домі."),
-  bestAchievement("pushups_15", "mon_pushup", 15, "Опора сім'ї", "15 віджимань в одному підході.", "Якщо доведеться штовхати машину, що заглохла, — ти перший у черзі."),
+  bestAchievement("grip", "thu_grip", 25, "Залізна хватка", "25 розведень пальців з еспандером в одному підході.", "Банки з огірками більше не мають шансів. Тепер тебе кличуть відкривати все в домі."),
+  bestAchievement("pushups_15", ["mon_pushup", "fri_pushup"], 15, "Опора сім'ї", "15 віджимань в одному підході.", "Якщо доведеться штовхати машину, що заглохла, — ти перший у черзі."),
+  // Навички з функціональної програми (з 7.12.2026).
+  bestAchievement("frog_30", "skill_frog", 30, "Жаба-воїн", "Утримайте «жабку» 30 с.", "Тридцять секунд на руках, коліна на ліктях. Земля вже не тягне так сильно."),
+  levelAchievement("crow", "skill_frog", 1, "Ворона", "Перейдіть з «жабки» на «ворону».", "Таз над плечима, руки майже прямі. Ще трохи — і злетиш."),
+  bestAchievement("hspu_6", "skill_wall_hspu", 6, "Догори дриґом", "6 віджимань у стійці біля стіни за один підхід.", "Шість разів підняти себе головою вниз. Гравітація подала скаргу."),
+  levelAchievement("hspu_full", "skill_wall_hspu", 1, "Повна амплітуда", "Віджимання в стійці до підлоги.", "Голова торкається підлоги — і повертається назад. Чесно, до кінця."),
+  levelAchievement("hspu_bars", "skill_wall_hspu", 2, "Глибше за підлогу", "Перейдіть на віджимання в стійці на паралетках.", "Голова опускається нижче рук. Колишній рівень — позаду."),
+  bestAchievement("free_hs_5", "skill_free_hs", 5, "П'ять секунд невагомості", "Протримайте вільну стійку на руках 5 с.", "Без стіни, без страховки. П'ять секунд, які тягнулися вічність."),
+  bestAchievement("free_hs_15", "skill_free_hs", 15, "Сам собі опора", "Протримайте вільну стійку на руках 15 с.", "Стіна більше не потрібна. Вона трохи сумує."),
+  levelAchievement("tripod_free", "skill_tripod_press", 1, "Без стіни", "Перейдіть на підйом з трикутника одним поштовхом без стіни.", "Ціль, до якої колись не дотягнувся. Тепер — дотягнувся."),
+  bestAchievement("archer_6", "mon_archer", 6, "Лучник", "6 archer-віджимань на кожну руку за підхід.", "Одна рука працює, друга лише підтримує. Половина шляху до віджимань на одній руці."),
+  levelAchievement("pistol", "tue_pistol", 2, "Пістолет", "Перейдіть на присідання на одній нозі без опори.", "Одна нога, повна амплітуда, без стільця. Ноги тепер не лише сильні, а й розумні."),
+  levelAchievement("lsit", "mon_tuck", 2, "Кут", "Перейдіть на повне утримання кута.", "Ноги прямі, тіло в повітрі. Прес, плечі й характер — в одній позі."),
   countAchievement("test", "Перевірка сил", "Пройдіть тест на максимум.", "tests", 1, "Чесний замір сил. Тепер є з чим порівнювати."),
   ...TEST_DAY.blocks
     .flatMap((block) => block.exercises)
@@ -131,7 +150,7 @@ function computeGame(store) {
     if (!history[id]) history[id] = [];
     history[id].push({ key, value, name: exercise.name, weight: exercise.weight, unit: exercise.unit, level });
   };
-  const counters = { workouts: 0, perfect: 0, fullWeeks: 0, bestStreak: 0, levelups: 0, records: 0, tests: 0, comebacks: 0, kcal: 0, goals: {}, best: {} };
+  const counters = { workouts: 0, perfect: 0, fullWeeks: 0, bestStreak: 0, levelups: 0, records: 0, tests: 0, comebacks: 0, kcal: 0, goals: {}, best: {}, levels: {} };
   let xp = 0;
   let streak = 0;
   let lastFullMonday = null;
@@ -190,6 +209,7 @@ function computeGame(store) {
           const { state, status } = advance(exercise, current, results, plan.deload);
           if (status === "levelup") levelups += 1;
           states[exercise.id] = state;
+          counters.levels[exercise.id] = Math.max(counters.levels[exercise.id] || 0, state.level || 0);
         });
       });
 
