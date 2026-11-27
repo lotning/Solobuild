@@ -357,7 +357,7 @@ SCHEDULE_HISTORY.push({ until: "2026-12-07", testWeekday: 3, days: { ...TRAINING
         note: STRENGTH_NOTE,
         exercises: [
           { id: "wed_row_power", guide: "row", name: "Тяга гантелі однією рукою, вибухово", weight: "15 кг", side: "рука", sets: 4, target: 6, max: 10, rest: STRENGTH_REST, levels: [{}, { name: "Тяга гантелі однією рукою, пауза 2 с угорі", repExtra: 2 }], cue: "Вгору — різко, ніби заводите мотор. Вниз — повільно, за 2 с." },
-          { id: "wed_table_row", guide: "table_row", name: "Тяга під столом", sets: 3, target: 6, max: 12, rest: STRENGTH_REST, levels: [{}, { name: "Тяга під столом, ноги на опорі", cue: "Стопи на стільці — тіло горизонтальніше й важче." }], cue: "Груди до краю стола, лопатки зводяться. Стіл має бути міцним." },
+          { id: "wed_renegade", guide: "renegade_row", name: "Тяга в планці", weight: "15 кг", side: "рука", sets: 3, target: 6, max: 10, rest: STRENGTH_REST, levels: [{}, { name: "Тяга в планці, пауза 2 с угорі", repExtra: 2 }], cue: "Ноги ширше за плечі, таз не розвертається. Тягніть ліктем до пояса." },
           pick(2, "thu_y_raise"),
           pick(2, "thu_carry"),
           { ...pick(2, "thu_grip"), guide: "finger_ext", name: "Розгинання пальців з еспандером", cue: "Розводьте пальці повністю, пауза 1 с, повертайте повільно." },
