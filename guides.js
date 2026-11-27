@@ -1150,3 +1150,19 @@ GUIDES.crow.views = [
   { title: "Спереду", frames: [FROG_FRONT[0], { pts: { ...FROG_FRONT[1].pts, head: [100, 90], neck: [100, 80], lsh: [87, 82], rsh: [113, 82], lel: [82, 101], rel: [118, 101], pel: [100, 62], lhp: [92, 62], rhp: [108, 62], lkn: [82, 82], rkn: [118, 82], lan: [88, 74], ran: [112, 74] } }], hands: true },
 ];
 GUIDES.tripod_press.views[0].props = [["wall", 96, 0]];
+
+// Правки після перегляду: лишаємо тільки ті ракурси, що справді допомагають.
+GUIDES.frog_stand.views = null;
+GUIDES.crow.views = null;
+GUIDES.tuck_sit.views = null;
+GUIDES.tuck_sit.props = PARALLETTES;
+// Трикутник: без стіни й без виду зверху; носки дивляться вздовж ніг.
+TRIPOD_TUCK.pts.tN = [101, 103];
+TRIPOD_TUCK.pts.tF = [102, 102];
+TRIPOD_RISE.pts.tN = [113, 1];
+TRIPOD_RISE.pts.tF = [114, 0];
+TRIPOD_HS.pts.tN = [116, -3];
+TRIPOD_HS.pts.tF = [117, -3];
+GUIDES.tripod_press.views = null;
+GUIDES.tripod_press.props = [];
+GUIDES.tripod_press.frames = [TRIPOD_TUCK, TRIPOD_RISE, TRIPOD_HS];
