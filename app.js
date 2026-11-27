@@ -9,6 +9,8 @@ const todayKey = toKey(today);
 const todayIndex = weekdayIndex(todayKey);
 let selectedIndex = todayIndex;
 let weekOffset = 0;
+// Наскільки тижнів уперед можна гортати календар, щоб подивитися план.
+const MAX_WEEKS_AHEAD = 8;
 let editingKey = null;
 let editSnapshot = null;
 let storageFailed = false;
@@ -190,13 +192,17 @@ function setInputs(exercise, sets, key, context) {
   if (fill) {
     fill.type = "button";
     fill.addEventListener("click", () => {
+      let lastFilled = null;
       inputs.forEach((input, index) => {
         if (input.value === "") {
           input.value = String(exercise.target);
           setResult(key, exercise.id, index, input.value);
+          lastFilled = input;
         }
       });
       updateButtons();
+      // Як і при ручному введенні: після заповнення стартує відпочинок.
+      if (lastFilled && context.live && typeof onSetEntered === "function") onSetEntered(lastFilled, context, context.last);
     });
   }
 
@@ -566,7 +572,7 @@ function renderWeekNav() {
   const next = el("button", "week-arrow", "›");
   next.type = "button";
   next.setAttribute("aria-label", "Наступний тиждень");
-  next.disabled = weekOffset >= 0;
+  next.disabled = weekOffset >= MAX_WEEKS_AHEAD;
   next.addEventListener("click", () => {
     weekOffset += 1;
     render();
