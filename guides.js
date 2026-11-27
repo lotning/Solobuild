@@ -980,3 +980,173 @@ Object.assign(GUIDES, {
     feel: "Зовнішній бік передпліччя — розгиначі. Вони врівноважують усю роботу на хват.",
   },
 });
+
+// ── Схеми v2: кілька ракурсів і пози, задані точками суглобів ──
+// Вид зверху: людина в упорі лежачи, голова праворуч. Акцентні точки — долоні.
+function topPushup({ hands, elbows, shift = 0 }) {
+  const y = 64 + shift;
+  return {
+    pts: {
+      head: [134, y], neck: [121, y], pel: [62, y],
+      lsh: [120, y - 12], rsh: [120, y + 12],
+      lel: elbows[0], rel: elbows[1], lha: hands[0], rha: hands[1],
+      lhp: [62, y - 6], rhp: [62, y + 6], lkn: [37, y - 5], rkn: [37, y + 5], lan: [12, y - 4], ran: [12, y + 4],
+    },
+  };
+}
+
+const TOP_VIEW = { title: "Зверху", floor: false, hands: true };
+
+Object.assign(GUIDES.pushup, {
+  views: [
+    { title: "Збоку", frames: PUSHUP_FRAMES },
+    {
+      ...TOP_VIEW,
+      frames: [
+        topPushup({ hands: [[123, 42], [123, 86]], elbows: [[122, 47], [122, 81]] }),
+        topPushup({ hands: [[123, 42], [123, 86]], elbows: [[108, 38], [108, 90]] }),
+      ],
+    },
+  ],
+});
+
+Object.assign(GUIDES.narrow_pushup, {
+  views: [
+    { title: "Збоку", frames: GUIDES.narrow_pushup.frames, props: GUIDES.narrow_pushup.props },
+    {
+      ...TOP_VIEW,
+      frames: [
+        topPushup({ hands: [[120, 57], [120, 71]], elbows: [[120, 54], [120, 74]] }),
+        topPushup({ hands: [[120, 57], [120, 71]], elbows: [[103, 50], [103, 78]] }),
+      ],
+    },
+  ],
+});
+
+Object.assign(GUIDES.archer_pushup, {
+  views: [
+    { title: "Збоку", frames: PUSHUP_FRAMES },
+    {
+      ...TOP_VIEW,
+      frames: [
+        topPushup({ hands: [[123, 24], [123, 104]], elbows: [[121, 37], [121, 91]] }),
+        topPushup({ shift: -14, hands: [[123, 24], [123, 104]], elbows: [[106, 30], [122, 78]] }),
+        topPushup({ hands: [[123, 24], [123, 104]], elbows: [[121, 37], [121, 91]] }),
+        topPushup({ shift: 14, hands: [[123, 24], [123, 104]], elbows: [[122, 50], [106, 98]] }),
+      ],
+    },
+  ],
+  ms: 1000,
+  hold: [250, 500, 250, 500],
+});
+
+Object.assign(GUIDES.deep_pushup, {
+  views: [
+    { title: "Збоку", frames: PUSHUP_FRAMES, props: PARALLETTES },
+    {
+      ...TOP_VIEW,
+      props: [["line", 108, 42, 138, 42, 5], ["line", 108, 86, 138, 86, 5]],
+      frames: [
+        topPushup({ hands: [[123, 42], [123, 86]], elbows: [[122, 47], [122, 81]] }),
+        topPushup({ hands: [[123, 42], [123, 86]], elbows: [[108, 38], [108, 90]] }),
+      ],
+    },
+  ],
+});
+
+// «Жабка» і «ворона» збоку — точно розставлені суглоби.
+const FROG_START = {
+  pts: {
+    hip: [86, 100], neck: [112, 86], head: [121, 92],
+    kN: [108, 104], aN: [90, 118], tN: [97, 120], kF: [107, 103], aF: [89, 117], tF: [96, 119],
+    eN: [116, 103], hN: [118, 119], eF: [115, 102], hF: [117, 119],
+  },
+};
+const FROG_UP = {
+  pts: {
+    hip: [100, 82], neck: [128, 92], head: [137, 98],
+    kN: [116, 100], aN: [93, 92], tN: [87, 96], kF: [117, 99], aF: [94, 90], tF: [88, 94],
+    eN: [113, 102], hN: [118, 119], eF: [114, 101], hF: [119, 119],
+  },
+};
+const CROW_UP = {
+  pts: {
+    hip: [97, 65], neck: [120, 84], head: [129, 90],
+    kN: [118, 82], aN: [95, 74], tN: [90, 70], kF: [119, 81], aF: [96, 72], tF: [91, 68],
+    eN: [116, 102], hN: [118, 119], eF: [117, 101], hF: [119, 119],
+  },
+};
+GUIDES.frog_stand.frames = [FROG_START, FROG_UP];
+GUIDES.crow.frames = [FROG_START, CROW_UP];
+
+// Вихід з трикутника: збоку — три фази, зверху — сам трикутник опори.
+const TRIPOD_TUCK = {
+  pts: {
+    hip: [124, 73], neck: [127, 103], head: [133, 112],
+    kN: [100, 73], aN: [100, 97], tN: [94, 97], kF: [101, 72], aF: [101, 96], tF: [95, 96],
+    eN: [112, 102], hN: [116, 119], eF: [113, 101], hF: [117, 119],
+  },
+};
+const TRIPOD_RISE = {
+  pts: {
+    hip: [118, 55], neck: [119, 85], head: [121, 96],
+    kN: [110, 32], aN: [112, 8], tN: [117, 5], kF: [111, 31], aF: [113, 7], tF: [118, 4],
+    eN: [114, 102], hN: [116, 119], eF: [115, 101], hF: [117, 119],
+  },
+};
+const TRIPOD_HS = {
+  pts: {
+    hip: [116, 54], neck: [116, 84], head: [119, 95],
+    kN: [116, 29], aN: [116, 4], tN: [121, 2], kF: [117, 29], aF: [117, 4], tF: [122, 2],
+    eN: [116, 102], hN: [116, 119], eF: [117, 102], hF: [117, 119],
+  },
+};
+GUIDES.tripod_press.views = [
+  { title: "Збоку", props: [["wall", 108, 0]], frames: [TRIPOD_TUCK, TRIPOD_RISE, TRIPOD_HS] },
+  {
+    title: "Зверху: трикутник",
+    floor: false,
+    hands: true,
+    props: [["hint", 80, 46, 80, 94, 116, 70]],
+    frames: [{ pts: { head: [116, 70], neck: [104, 70], lsh: [100, 56], rsh: [100, 84], lel: [90, 46], rel: [90, 94], lha: [80, 46], rha: [80, 94] } }],
+  },
+];
+GUIDES.tripod_press.ms = 1100;
+GUIDES.tripod_press.hold = [800, 0, 1300];
+
+// Утримання на паралетках: збоку і спереду, де видно обидві перекладини.
+const PARALLETTES_FRONT = [["box", 58, 92, 14, 5], ["box", 62, 92, 6, 28], ["box", 128, 92, 14, 5], ["box", 132, 92, 6, 28]];
+GUIDES.tuck_sit.views = [
+  { title: "Збоку", props: PARALLETTES, frames: GUIDES.tuck_sit.frames },
+  {
+    title: "Спереду",
+    props: PARALLETTES_FRONT,
+    frames: [
+      { pts: { head: [100, 52], neck: [100, 63], lsh: [84, 66], rsh: [116, 66], lel: [74, 80], rel: [126, 80], lha: [65, 92], rha: [135, 92], pel: [100, 96], lhp: [92, 98], rhp: [108, 98], lkn: [90, 112], rkn: [110, 112], lan: [91, 119], ran: [109, 119] } },
+      { pts: { head: [100, 34], neck: [100, 45], lsh: [80, 48], rsh: [120, 48], lel: [72, 70], rel: [128, 70], lha: [65, 92], rha: [135, 92], pel: [100, 76], lhp: [92, 78], rhp: [108, 78], lkn: [90, 66], rkn: [110, 66], lan: [90, 86], ran: [110, 86] } },
+    ],
+  },
+];
+GUIDES.tuck_sit.hold = [400, 2200];
+
+// Глибокі віджимання: долоні на паралетках, груди опускаються нижче рук.
+const DEEP_FRAMES = [
+  { ...lineBody([20, 112], 38), a: { to: [100, 92], bend: 1 } },
+  { ...lineBody([20, 112], 14), a: { to: [100, 92], bend: 1 } },
+];
+GUIDES.deep_pushup.views[0].frames = DEEP_FRAMES;
+
+// «Жабка» спереду: коліна лежать на ліктях, стопи відриваються від підлоги.
+const FROG_FRONT = [
+  { pts: { head: [100, 76], neck: [100, 86], lsh: [86, 88], rsh: [114, 88], lel: [76, 103], rel: [124, 103], lha: [80, 119], rha: [120, 119], pel: [100, 96], lhp: [92, 96], rhp: [108, 96], lkn: [72, 102], rkn: [128, 102], lan: [90, 118], ran: [110, 118] } },
+  { pts: { head: [100, 98], neck: [100, 90], lsh: [86, 92], rsh: [114, 92], lel: [75, 103], rel: [125, 103], lha: [80, 119], rha: [120, 119], pel: [100, 78], lhp: [92, 78], rhp: [108, 78], lkn: [72, 98], rkn: [128, 98], lan: [88, 92], ran: [112, 92] } },
+];
+GUIDES.frog_stand.views = [
+  { title: "Збоку", frames: [FROG_START, FROG_UP] },
+  { title: "Спереду", frames: FROG_FRONT, hands: true },
+];
+GUIDES.crow.views = [
+  { title: "Збоку", frames: [FROG_START, CROW_UP] },
+  { title: "Спереду", frames: [FROG_FRONT[0], { pts: { ...FROG_FRONT[1].pts, head: [100, 90], neck: [100, 80], lsh: [87, 82], rsh: [113, 82], lel: [82, 101], rel: [118, 101], pel: [100, 62], lhp: [92, 62], rhp: [108, 62], lkn: [82, 82], rkn: [118, 82], lan: [88, 74], ran: [112, 74] } }], hands: true },
+];
+GUIDES.tripod_press.views[0].props = [["wall", 96, 0]];

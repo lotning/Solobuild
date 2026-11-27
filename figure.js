@@ -32,6 +32,7 @@ function figFoot(spec) {
 }
 
 function figJoints(pose) {
+  if (pose.pts) return pose.pts;
   const j = { hip: pose.hip };
   j.neck = figAt(pose.hip, pose.t, BODY.torso);
   j.head = figAt(j.neck, pose.hd === undefined ? pose.t : pose.hd, BODY.neck);
@@ -62,6 +63,16 @@ function figMixLimb(a, b, t) {
 }
 
 function figMix(a, b, t) {
+  if (a.pts && b.pts) {
+    const pts = {};
+    Object.keys(a.pts).forEach((name) => {
+      const from = a.pts[name];
+      const to = b.pts[name] || from;
+      pts[name] = [figLerp(from[0], to[0], t), figLerp(from[1], to[1], t)];
+    });
+    return { pts, bend: t < 0.5 ? a.bend : b.bend };
+  }
+  if (a.pts || b.pts) return t < 0.5 ? a : b;
   const pose = {
     hip: [figLerp(a.hip[0], b.hip[0], t), figLerp(a.hip[1], b.hip[1], t)],
     t: figLerpAngle(a.t, b.t, t),
@@ -100,15 +111,55 @@ function figProps(props, colors) {
       const [kind, ...v] = prop;
       if (kind === "box") return `<rect x="${v[0]}" y="${v[1]}" width="${v[2]}" height="${v[3]}" rx="3" fill="${colors.prop}"/>`;
       if (kind === "wall") return figLine([[v[0], v[1] || 8], [v[0], 118]], colors.prop, 5);
+      // Лінія довільної форми: ["line", x1, y1, x2, y2, товщина].
+      if (kind === "line") return figLine([[v[0], v[1]], [v[2], v[3]]], colors.prop, v[4] || 4);
+      // Пунктирна підказка (наприклад, трикутник опори): ["hint", x1, y1, x2, y2, …].
+      if (kind === "hint") {
+        const pts = [];
+        for (let i = 0; i + 1 < v.length; i += 2) pts.push([v[i], v[i + 1]]);
+        return `<polygon points="${figPts(...pts)}" fill="none" stroke="${colors.accent}" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.8"/>`;
+      }
       return "";
     })
     .join("");
 }
 
+// Скелет для вигляду спереду чи зверху: l/r — ліва й права сторони тіла.
+const FRONT_BONES = [
+  ["lsh", "rsh"],
+  ["lsh", "lel", "lha"],
+  ["rsh", "rel", "rha"],
+  ["neck", "pel"],
+  ["lhp", "rhp"],
+  ["lhp", "lkn", "lan", "lto"],
+  ["rhp", "rkn", "ran", "rto"],
+];
+
+function figDrawFront(j, guide, colors) {
+  let svg = "";
+  FRONT_BONES.forEach((bone) => {
+    const points = bone.map((name) => j[name]).filter(Boolean);
+    if (points.length < 2) return;
+    const width = bone[0] === "neck" ? 6 : bone[0] === "lsh" && bone.length === 2 ? 5 : 5;
+    svg += figLine(points, colors.body, width);
+  });
+  if (j.lsh && j.rsh && j.neck) svg += figLine([j.lsh, j.neck, j.rsh], colors.body, 5);
+  if (j.head) svg += `<circle cx="${j.head[0].toFixed(1)}" cy="${j.head[1].toFixed(1)}" r="${BODY.head}" fill="${colors.body}"/>`;
+  ["lha", "rha"].forEach((name) => {
+    if (j[name] && guide.hands) svg += `<circle cx="${j[name][0].toFixed(1)}" cy="${j[name][1].toFixed(1)}" r="3.2" fill="${colors.accent}"/>`;
+  });
+  return svg;
+}
+
 function figDraw(pose, guide, colors = FIG_COLORS) {
   const j = figJoints(pose);
   let svg = figProps(guide.props || [], colors);
-  svg += figLine([[4, 120], [196, 120]], colors.prop, 3);
+  if (guide.floor !== false) svg += figLine([[4, 120], [196, 120]], colors.prop, 3);
+  if (pose.pts && !pose.pts.kN) {
+    svg += figDrawFront(j, guide, colors);
+    (guide.propsTop || []).length && (svg += figProps(guide.propsTop, colors));
+    return svg;
+  }
   const opacity = ' opacity="0.55"';
   svg += figLine([j.hip, j.kF, j.aF, j.tF], colors.far, 5, opacity);
   svg += figLine([j.neck, j.eF, j.hF], colors.far, 4.5, opacity);
@@ -122,6 +173,7 @@ function figDraw(pose, guide, colors = FIG_COLORS) {
     const angle = guide.dbAngle === undefined ? figAngle(elbow, hand) + 90 : guide.dbAngle;
     svg += figDumbbell(hand, angle, colors);
   });
+  if (guide.propsTop) svg += figProps(guide.propsTop, colors);
   if (pose.g !== undefined) {
     const spread = 7 - pose.g * 5;
     const top = [j.hN[0], j.hN[1] - 7];
@@ -156,11 +208,13 @@ function figTop(guide) {
   for (let step = 0; step <= 40; step += 1) {
     const j = figJoints(figPoseAt(guide, (total * step) / 40));
     Object.values(j).forEach((point) => {
-      if (point) top = Math.min(top, point[1]);
+      if (Array.isArray(point)) top = Math.min(top, point[1]);
     });
   }
-  (guide.props || []).forEach((prop) => {
+  (guide.props || []).concat(guide.propsTop || []).forEach((prop) => {
     if (prop[0] === "box") top = Math.min(top, prop[2]);
+    if (prop[0] === "line") top = Math.min(top, prop[2], prop[4]);
+    if (prop[0] === "wall") top = Math.min(top, prop[2] || 8);
   });
   return Math.max(0, Math.floor(top - BODY.head - 8));
 }
@@ -169,19 +223,79 @@ function figSvg(inner, label, top = 0) {
   return `<svg viewBox="0 ${top} 200 ${128 - top}" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
 }
 
-// Створює анімацію, яка грає лише поки блок відкритий.
+// Межі фігури за всю анімацію (з реквізитом): [minX, minY, maxX, maxY].
+function figBox(guide) {
+  let box = [Infinity, Infinity, -Infinity, -Infinity];
+  const grow = (x, y, pad = 0) => {
+    box = [Math.min(box[0], x - pad), Math.min(box[1], y - pad), Math.max(box[2], x + pad), Math.max(box[3], y + pad)];
+  };
+  const total = guide.frames.length * ((guide.ms || 900) + 600);
+  for (let step = 0; step <= 40; step += 1) {
+    const j = figJoints(figPoseAt(guide, (total * step) / 40));
+    Object.entries(j).forEach(([name, point]) => {
+      if (Array.isArray(point)) grow(point[0], point[1], name === "head" ? BODY.head : 3);
+    });
+  }
+  (guide.props || []).concat(guide.propsTop || []).forEach((prop) => {
+    const [kind, ...v] = prop;
+    if (kind === "box") {
+      grow(v[0], v[1]);
+      grow(v[0] + v[2], v[1] + v[3]);
+    } else if (kind === "wall") {
+      grow(v[0], v[1] || 8, 3);
+      grow(v[0], 118, 3);
+    } else {
+      for (let i = 0; i + 1 < v.length; i += 2) grow(v[i], v[i + 1], 2);
+    }
+  });
+  if (guide.floor !== false) box[3] = Math.max(box[3], 122);
+  return box;
+}
+
+function figSvgBox(inner, label, box, height) {
+  const pad = 8;
+  const h = height + pad * 2;
+  const w = Math.max(box[2] - box[0] + pad * 2, 60);
+  const cx = (box[0] + box[2]) / 2;
+  const bottom = box[3] + pad;
+  return `<svg viewBox="${(cx - w / 2).toFixed(1)} ${(bottom - h).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+}
+
+// Ракурси вправи: guide.views = [{ title, frames, props, … }] або сама вправа як єдиний ракурс.
+function figViews(guide) {
+  if (!guide.views) return [guide];
+  return guide.views.map((view) => ({ ms: guide.ms, hold: guide.hold, db: guide.db, dbAngle: guide.dbAngle, ...view }));
+}
+
+// Створює анімацію, яка грає лише поки блок відкритий. Кілька ракурсів рухаються синхронно.
 function mountFigure(holder, details, guide, label) {
   const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduced || guide.frames.length === 1) {
-    const peak = guide.frames[guide.peak === undefined ? guide.frames.length - 1 : guide.peak];
-    const shown = guide.frames.length === 1 ? [guide.frames[0]] : [guide.frames[0], peak];
-    const top = figTop(guide);
-    holder.innerHTML = shown.map((pose) => figSvg(figDraw(pose, guide), label, top)).join("");
-    holder.classList.toggle("is-pair", shown.length > 1);
+  const views = figViews(guide);
+  const multi = views.length > 1;
+  holder.classList.toggle("is-views", multi);
+  const boxes = views.map(figBox);
+  const height = Math.max(...boxes.map((box) => box[3] - box[1]));
+  const svgFor = (view, index, pose) =>
+    multi ? figSvgBox(figDraw(pose, view), label, boxes[index], height) : figSvg(figDraw(pose, view), label, figTop(view));
+  if (reduced) {
+    holder.innerHTML = views
+      .map((view) => {
+        const peak = view.frames[view.peak === undefined ? view.frames.length - 1 : view.peak];
+        const shown = view.frames.length === 1 || multi ? [peak] : [view.frames[0], peak];
+        const svgs = shown.map((pose) => svgFor(view, views.indexOf(view), pose)).join("");
+        return multi ? `<figure class="fig-view">${svgs}<figcaption>${view.title || ""}</figcaption></figure>` : svgs;
+      })
+      .join("");
+    holder.classList.toggle("is-pair", !multi && views[0].frames.length > 1);
     return;
   }
-  holder.innerHTML = figSvg(figDraw(guide.frames[0], guide), label, figTop(guide));
-  const svg = holder.firstChild;
+  holder.innerHTML = views
+    .map((view, index) => {
+      const svg = svgFor(view, index, view.frames[0]);
+      return multi ? `<figure class="fig-view">${svg}<figcaption>${view.title || ""}</figcaption></figure>` : svg;
+    })
+    .join("");
+  const svgs = Array.from(holder.querySelectorAll("svg"));
   let frame = null;
   let start = 0;
   function tick(now) {
@@ -190,7 +304,9 @@ function mountFigure(holder, details, guide, label) {
       return;
     }
     if (!start) start = now;
-    svg.innerHTML = figDraw(figPoseAt(guide, now - start), guide);
+    views.forEach((view, index) => {
+      if (view.frames.length > 1) svgs[index].innerHTML = figDraw(figPoseAt(view, now - start), view);
+    });
     frame = requestAnimationFrame(tick);
   }
   details.addEventListener("toggle", () => {
