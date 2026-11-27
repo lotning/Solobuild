@@ -37,7 +37,7 @@ const CALORIE_RATES = {
   tue_split_power: { met: 6, rep: 3.5 },
   tue_sl_rdl: { met: 5, rep: 3.5 },
   wed_row_power: { met: 5, rep: 3 },
-  wed_table_row: { met: 5, rep: 3 },
+  wed_renegade: { met: 5, rep: 3 },
   wed_hammer: { met: 3.5, rep: 3 },
   skill_chest_wall: { met: 4 },
   skill_tripod_press: { met: 5, rep: 8 },
