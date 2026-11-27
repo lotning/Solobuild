@@ -286,6 +286,118 @@ SCHEDULE_HISTORY.push({ until: "2026-11-30", testWeekday: 3, days: { ...TRAINING
 }
 
 // Розклад, що діяв на дату key (рядок РРРР-ММ-ДД).
+// З 7.12.2026: функціональна сила замість росту м'язів. Навички на початку пн і чт, у основних вправах
+// 3–8 якісних повторень з запасом і довгим відпочинком, руки окремо — на ріст. Паралетки 43 см.
+SCHEDULE_HISTORY.push({ until: "2026-12-07", testWeekday: 3, days: { ...TRAINING_DAYS } });
+{
+  const STRENGTH_REST = 150;
+  const STRENGTH_NOTE = "Зупиняйтеся за 1–2 повторення до межі: рух має лишатися чистим. Відпочинок 2–3 хв.";
+  const SKILL_NOTE = "10–15 хв, поки ви свіжі. Без поспіху й без відмови: якість кожної спроби важливіша за кількість.";
+  const ARMS_NOTE = "Руки — на ріст: тут можна дотискати до межі. Відпочинок 1–1,5 хв.";
+  const old = { ...TRAINING_DAYS };
+  const pick = (dayIndex, id) => old[dayIndex].blocks.flatMap((block) => block.exercises).find((exercise) => exercise.id === id);
+
+  TRAINING_DAYS[0] = {
+    ...old[0],
+    title: "Жим, стійка, руки",
+    blocks: [
+      {
+        title: "Навички",
+        note: SKILL_NOTE,
+        exercises: [
+          { id: "skill_frog", guide: "frog_stand", name: "«Жабка»", sets: 3, target: 15, max: 30, unit: "с", levels: [{}, { name: "«Ворона»", guide: "crow", cue: "Коліна вище, під пахвами, руки майже прямі." }], cue: "Коліна на ліктях, вага вперед на пальці, погляд трохи вперед." },
+          { id: "skill_wall_hspu", guide: "wall_hspu", name: "Віджимання в стійці біля стіни", sets: 4, target: 3, max: 6, rest: STRENGTH_REST, levels: [{}, { name: "Віджимання в стійці, голова до підлоги", cue: "Повна амплітуда: голова легко торкається рушника чи підлоги." }, { name: "Віджимання в стійці на паралетках", cue: "Руки на паралетках, голова опускається нижче рук." }], cue: "Опускайтеся лише настільки, наскільки контролюєте рух. Глибину додавайте поступово." },
+        ],
+      },
+      {
+        title: "Основна частина",
+        note: STRENGTH_NOTE,
+        exercises: [
+          { id: "mon_archer", guide: "archer_pushup", name: "Archer-віджимання", side: "рука", sets: 4, target: 3, max: 6, rest: STRENGTH_REST, levels: [{}, { name: "Archer-віджимання на паралетках", cue: "Глибше: груди нижче рівня рук." }], cue: "Опускайтеся до робочої руки, друга лишається прямою. Важко — тільки повільне опускання." },
+          { id: "mon_deep", guide: "deep_pushup", name: "Глибокі віджимання на паралетках", sets: 3, target: 6, max: 10, rest: STRENGTH_REST, levels: [{}, { name: "Глибокі віджимання на паралетках, ноги на опорі", cue: "Стопи на стільці, тіло рівне." }], cue: "Груди трохи нижче рук, пауза внизу без провалювання в плечах." },
+          { id: "mon_tuck", guide: "tuck_sit", name: "Утримання з підтягнутими колінами на паралетках", sets: 3, target: 10, max: 20, unit: "с", levels: [{}, { name: "Утримання з однією прямою ногою", cue: "Одна нога пряма вперед, друга підтягнута. Міняйте ноги між підходами." }, { name: "Утримання кута", cue: "Обидві ноги прямі перед собою." }], cue: "Плечі вниз, від вух. Руки прямі." },
+        ],
+      },
+      {
+        title: "Руки",
+        note: ARMS_NOTE,
+        exercises: [
+          { id: "mon_tri_ext", guide: "triceps_ext", name: "Розгинання гантелі з-за голови", weight: "15 кг", sets: 3, target: 10, max: 15, levels: harderLevels("Розгинання гантелі з-за голови"), cue: "Лікті дивляться вперед і не розходяться." },
+        ],
+      },
+      CORE_BLOCK,
+    ],
+  };
+
+  TRAINING_DAYS[1] = {
+    ...old[1],
+    title: "Ноги й баланс",
+    blocks: [
+      {
+        title: "Основна частина",
+        note: STRENGTH_NOTE,
+        exercises: [
+          { id: "tue_pistol", guide: "pistol_box", name: "Присідання на одній нозі до стільця", side: "нога", sets: 4, target: 4, max: 8, rest: STRENGTH_REST, levels: [{}, { name: "Присідання на одній нозі до низької опори", cue: "Опора на рівні дивана чи нижче." }, { name: "Присідання на одній нозі", cue: "Без опори, повна амплітуда. Вільна нога пряма вперед." }], cue: "Опускайтеся за 2–3 с, ледь торкніться опори й вставайте." },
+          { id: "tue_split_power", guide: "split_squat", name: "Болгарські випади", weight: "15 кг", side: "нога", sets: 3, target: 6, max: 10, rest: STRENGTH_REST, levels: [{}, { name: "Болгарські випади, пауза 2 с унизу", repExtra: 2 }], cue: "Вниз контрольовано, вгору — потужно." },
+          { id: "tue_sl_rdl", guide: "sl_rdl", name: "Румунська тяга на одній нозі", weight: "15 кг", side: "нога", sets: 3, target: 6, max: 10, rest: STRENGTH_REST, cue: "Таз рівно, вільна нога назад на одній лінії з корпусом." },
+          pick(1, "tue_calves"),
+          pick(1, "tue_hollow"),
+        ],
+      },
+      CORE_BLOCK,
+    ],
+  };
+
+  TRAINING_DAYS[2] = {
+    ...old[2],
+    title: "Тяга, руки, хват",
+    blocks: [
+      {
+        title: "Основна частина",
+        note: STRENGTH_NOTE,
+        exercises: [
+          { id: "wed_row_power", guide: "row", name: "Тяга гантелі однією рукою, вибухово", weight: "15 кг", side: "рука", sets: 4, target: 6, max: 10, rest: STRENGTH_REST, levels: [{}, { name: "Тяга гантелі однією рукою, пауза 2 с угорі", repExtra: 2 }], cue: "Вгору — різко, ніби заводите мотор. Вниз — повільно, за 2 с." },
+          { id: "wed_table_row", guide: "table_row", name: "Тяга під столом", sets: 3, target: 6, max: 12, rest: STRENGTH_REST, levels: [{}, { name: "Тяга під столом, ноги на опорі", cue: "Стопи на стільці — тіло горизонтальніше й важче." }], cue: "Груди до краю стола, лопатки зводяться. Стіл має бути міцним." },
+          pick(2, "thu_y_raise"),
+          pick(2, "thu_carry"),
+          { ...pick(2, "thu_grip"), guide: "finger_ext", name: "Розгинання пальців з еспандером", cue: "Розводьте пальці повністю, пауза 1 с, повертайте повільно." },
+        ],
+      },
+      {
+        title: "Руки",
+        note: ARMS_NOTE,
+        exercises: [
+          pick(2, "thu_curl"),
+          { id: "wed_hammer", guide: "hammer", name: "«Молотки»", weight: "15 кг", side: "рука", sets: 3, target: 10, max: 15, levels: harderLevels("«Молотки»"), cue: "Долоня дивиться на стегно, лікоть біля корпусу." },
+        ],
+      },
+      CORE_BLOCK,
+    ],
+  };
+
+  const endurance = old[3];
+  TRAINING_DAYS[3] = {
+    ...endurance,
+    title: "Баланс і витривалість",
+    blocks: [
+      {
+        title: "Навички",
+        note: SKILL_NOTE,
+        exercises: [
+          { id: "skill_chest_wall", guide: "chest_wall_hs", name: "Стійка на руках грудьми до стіни", sets: 3, target: 20, max: 45, unit: "с", levels: [{}, { name: "Стійка грудьми до стіни, відриваючи п'яти", cue: "По черзі відривайте п'яти від стіни на 1–3 с, баланс тримайте пальцями." }], cue: "Тіло рівне, плечі до вух, погляд між руками." },
+          { id: "skill_tripod_press", guide: "tripod_press", name: "Підйом з трикутника одним поштовхом", sets: 3, target: 2, max: 5, rest: STRENGTH_REST, levels: [{}, { name: "Підйом з трикутника одним поштовхом без стіни", cue: "На м'якому килимку, з вільним простором навколо." }], cue: "Руки й ноги разом, одним рухом. Стіна — тільки страховка." },
+          { id: "skill_free_hs", guide: "free_hs", name: "Вільна стійка на руках — спроби", sets: 5, target: 3, max: 20, unit: "с", cue: "Відштовхніться від стіни й рахуйте секунди без опори. Найкращу спробу записуйте." },
+        ],
+      },
+      ...endurance.blocks
+        .filter((block) => block !== CORE_BLOCK)
+        .map((block) => ({ ...block, exercises: block.exercises.filter((exercise) => exercise.id !== "fri_pike") }))
+        .filter((block) => block.exercises.length),
+      CORE_BLOCK,
+    ],
+  };
+}
+
 function scheduleFor(key) {
   const old = SCHEDULE_HISTORY.find((entry) => key < entry.until);
   return old ? { days: old.days, testWeekday: old.testWeekday } : { days: TRAINING_DAYS, testWeekday: CURRENT_TEST_WEEKDAY };
